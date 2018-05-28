@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="自己手写SpringMVC," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="github 地址：传送门   （更新了使用手册）前两天写了几个注解和处理器的 demo,然后发现可以写一个小框架。感觉 Springmvc 比较合适，之前也看过部分源码，然后就动手搞了一个。 代码没有抽取，设计也是一塌糊涂(比较菜，不会设计)，代码不优雅。实现了几个核心功能：注解式声明控制类，简单的数据绑定，返回 json，支持使用 model 传递数据，Result 风格的跳转和重定向，文件上">
+<meta name="keywords" content="自己手写SpringMVC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自己手写SpringMVC">
+<meta property="og:url" content="http://www.zzcode.cn/2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="github 地址：传送门   （更新了使用手册）前两天写了几个注解和处理器的 demo,然后发现可以写一个小框架。感觉 Springmvc 比较合适，之前也看过部分源码，然后就动手搞了一个。 代码没有抽取，设计也是一塌糊涂(比较菜，不会设计)，代码不优雅。实现了几个核心功能：注解式声明控制类，简单的数据绑定，返回 json，支持使用 model 传递数据，Result 风格的跳转和重定向，文件上">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-28T01:43:38.805Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自己手写SpringMVC">
+<meta name="twitter:description" content="github 地址：传送门   （更新了使用手册）前两天写了几个注解和处理器的 demo,然后发现可以写一个小框架。感觉 Springmvc 比较合适，之前也看过部分源码，然后就动手搞了一个。 代码没有抽取，设计也是一塌糊涂(比较菜，不会设计)，代码不优雅。实现了几个核心功能：注解式声明控制类，简单的数据绑定，返回 json，支持使用 model 传递数据，Result 风格的跳转和重定向，文件上">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/"/>
+
+
+
+
+
+  <title>自己手写SpringMVC | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">自己手写SpringMVC</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-06-19T19:28:22+08:00">
+                2017-06-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/自己手写SpringMVC/" itemprop="url" rel="index">
+                    <span itemprop="name">自己手写SpringMVC</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/" class="leancloud_visitors" data-flag-title="自己手写SpringMVC">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="github-地址：传送门-（更新了使用手册）"><a href="#github-地址：传送门-（更新了使用手册）" class="headerlink" title="github 地址：传送门   （更新了使用手册）"></a><strong>github 地址</strong>：<a href="https://github.com/GeXyu/mvc2" target="_blank" rel="noopener">传送门</a>   （更新了使用手册）</h3><p>前两天写了几个注解和处理器的 demo,然后发现可以写一个小框架。感觉 Springmvc 比较合适，之前也看过部分源码，然后就动手搞了一个。</p>
+<p>代码没有抽取，设计也是一塌糊涂(比较菜，不会设计)，代码不优雅。<br>实现了几个核心功能：注解式声明控制类，简单的数据绑定，返回 json，支持使用 model 传递数据，Result 风格的跳转和重定向，文件上传（可通过接受json获取上传状态）。<br>如果有志之士可以 fork 一份 添加功能,修复 bug。这里谢过了！</p>
+<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a><strong>原理</strong></h3><p>1，首先初始化的时候扫描指定的包，然后扫描类上的注解，生成一个 map。把注解上的值为 key,Java 类的全定限名为 value。<br>2，扫描方法上面的映射，维护映射 map,把 mapping 注解的值为 key,执行的方法为 value。初始化完成！<br>3，然后根据核心 servlet 去分发请求，然后解析返回字符串，进行跳转或者是重定向。<br>具体的思路就是这样<br>如果有志之士可以 fork 一份 添加功能,修复 bug.</p>
+<h4 id="打包好了：-Download-可以引入到项目使用啦～"><a href="#打包好了：-Download-可以引入到项目使用啦～" class="headerlink" title="打包好了： Download , 可以引入到项目使用啦～"></a><strong>打包好了： <a href="http://images.zzcode.cn/mvc2.jar" target="_blank" rel="noopener">Download</a> , 可以引入到项目使用啦～</strong></h4><h4 id="用到的-jar-包：bcel-6-0-jar-commons-beanutils-jar-json-20170516-jar-日志组件-logback"><a href="#用到的-jar-包：bcel-6-0-jar-commons-beanutils-jar-json-20170516-jar-日志组件-logback" class="headerlink" title="用到的 jar 包：bcel-6.0.jar   commons-beanutils.jar  json-20170516.jar  日志组件: logback"></a>用到的 jar 包：<a href="http://mvnrepository.com/artifact/org.apache.bcel/bcel" target="_blank" rel="noopener">bcel-6.0.jar</a>   <a href="http://mvnrepository.com/artifact/commons-beanutils/commons-beanutils/1.9.3" target="_blank" rel="noopener">commons-beanutils.jar</a>  <a href="http://mvnrepository.com/artifact/org.json/json/20160810" target="_blank" rel="noopener">json-20170516.jar</a>  日志组件: <a href="http://mvnrepository.com/artifact/ch.qos.logback/logback-core/1.1.7" target="_blank" rel="noopener">logback</a></h4><h3 id="那么怎么使用呢？"><a href="#那么怎么使用呢？" class="headerlink" title="那么怎么使用呢？"></a><strong>那么怎么使用呢？</strong></h3><p>首先在 action 类添加 @Action 注解,在方法添加 @Mapping 注解.</p>
+<p>@Action(“/index”)<br>public class Controller {<br>    @Mapping(value=”/hello”,RequestType=Type.get)<br>    public String sayHello(Model model){<br>        model.setParameter(“root”, “Hello”);<br>        return “welcome”;<br>    }<br>}</p>
+<p>它会跳转到 /WEB-INF/jsp 下的 welcome.jsp(这里我写死的,前缀 /WEB-INF/jsp.后缀.jsp)</p>
+<p>&lt;%@ page language=”java” contentType=”text/html; charset=UTF-8”<br>    pageEncoding=”UTF-8”%&gt;<br>&lt;!DOCTYPE html PUBLIC “-//W3C//DTD HTML 4.01 Transitional//EN” “<a href="http://www.w3.org/TR/html4/loose.dtd&quot;&gt;" target="_blank" rel="noopener">http://www.w3.org/TR/html4/loose.dtd&quot;&gt;</a></p>
+<html><br><head><br><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><br><title>Insert title here</title><br></head><br><body><br>${root }<br></body><br></html>
+
+<p>然后在项目的 web.xml 文件添加核心 servlet</p>
+<p>&lt;?xml version=”1.0” encoding=”UTF-8”?&gt;</p>
+<p><web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://java.sun.com/xml/ns/javaee 
+    http://java.sun.com/xml/ns/javaee/web-app\_2\_5.xsd"></web-app></p>
+<pre><code>&lt;servlet&gt;
+    &lt;servlet-name&gt;main&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;cn.xiuyu.servlet.MainServlet&lt;/servlet-class&gt;
+    &lt;!\-\- 设置最先启动保证初始化 --&gt;
+    &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
+    &lt;init-param&gt;
+        &lt;!\-\- 自定扫描的包 --&gt;
+        &lt;param-name&gt;package&lt;/param-name&gt;
+        &lt;param-value&gt;cn.xiuyu&lt;/param-value&gt;
+    &lt;/init-param&gt;
+&lt;/servlet&gt;
+&lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;main&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;/&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;
+</code></pre><p></p>
+<p>然后访问地址： http:localhost:8080/${项目名}/index/hello</p>
+<h4 id="其实使用上-springmvc-差不多，就这样。-有什么-bug-可以告诉我阿！-告诉我阿-！-我阿！-阿！！！"><a href="#其实使用上-springmvc-差不多，就这样。-有什么-bug-可以告诉我阿！-告诉我阿-！-我阿！-阿！！！" class="headerlink" title="其实使用上 springmvc 差不多，就这样。 有什么 bug 可以告诉我阿！ 告诉我阿 ！ 我阿！ 阿！！！"></a><strong>其实使用上 springmvc 差不多，就这样。 有什么 bug 可以告诉我阿！ 告诉我阿 ！ 我阿！ 阿！！！</strong></h4><h3 id="重定向和转发"><a href="#重定向和转发" class="headerlink" title="重定向和转发"></a><strong>重定向和转发</strong></h3><p>//post请求<br>    @Mapping(value=”/post”,RequestType=Type.post)<br>    public String post(){<br>        System.out.println(“—进入到了post请求 –”);<br>        return “redirect:/index/get”;<br>    }<br>    //get请求value  不备注默认为get<br>    @Mapping(value=”/get”,RequestType=Type.get)<br>    public String get(Model model){<br>        //model 只支持传值 取值<br>        model.setParameter(“key”, “value”);<br>        System.out.println(“—进入到了get请求 –”);<br>        return “welcome”;<br>    }</p>
+<h3 id="接受单字段-可以传入model对象（仅能传输对象）也可以传入request和response对象​"><a href="#接受单字段-可以传入model对象（仅能传输对象）也可以传入request和response对象​" class="headerlink" title="接受单字段 可以传入model对象（仅能传输对象）也可以传入request和response对象​"></a><strong>接受单字段 可以传入model对象（仅能传输对象）也可以传入request和response对象​</strong></h3><p>//接受单字段<br>    @Mapping(value=”/one”,RequestType=Type.post)<br>    public String one(String name,Model model){<br>        //model 只支持传值 取值<br>        model.setParameter(“key”, name);<br>        return “welcome”;<br>    }</p>
+<h3 id="封装实体"><a href="#封装实体" class="headerlink" title="封装实体"></a><strong>封装实体</strong></h3><p>//封装实体<br>    @Mapping(value=”/object”,RequestType=Type.post)<br>    public String object(User u,Model model){<br>        //model 只支持传值 取值<br>        model.setParameter(“key”, u.getName() + “–” + u.getPassword());<br>        return “welcome”;<br>    }</p>
+<h3 id="返回json-需要返回json对象并且在方法上添加-Json注解"><a href="#返回json-需要返回json对象并且在方法上添加-Json注解" class="headerlink" title="返回json  需要返回json对象并且在方法上添加@Json注解"></a><strong>返回json  需要返回json对象并且在方法上添加@Json注解</strong></h3><p>//返回json<br>    @Mapping(value=”/json”,RequestType=Type.get)<br>    @Json<br>    public User json(String name,String password,Model model){<br>        //model 只支持传值 取值<br>        User u = new User();<br>        u.setName(name);<br>        u.setPassword(password);<br>        System.out.println(u);<br>        return u;<br>    }</p>
+<h3 id="上传文件（目前仅能单文件上传）"><a href="#上传文件（目前仅能单文件上传）" class="headerlink" title="上传文件（目前仅能单文件上传）"></a><strong>上传文件（目前仅能单文件上传）</strong></h3><p>需要把表单设置为enctype=”multipart/form-data”，然后在action方法添加FileEntity实体接受文件，上传到/WEB-INF/upload/<em>/</em>文件夹下(*为算法生成)</p>
+<form action="${pageContext.request.contextPath }/index/uoload" method="post" enctype="multipart/form-data"><br>    <input type="file" name="testFile"><br>    <input type="submit" value="file"><br></form>
+
+<p>action方法</p>
+<p>//上传文件<br>    @Mapping(value=”/uoload”,RequestType=Type.post)<br>    public String uoload(FileEntity entity,Model model){<br>        //model 只支持传值 取值<br>        model.setParameter(“key”, entity.getPath() + “ “ +entity.getNewName());<br>        return “welcome”;<br>    }</p>
+<p>可以在文件上传过程接收文件上传状态，返回一个json对象(封装文件大小<code>pContentLength</code>和已上传文件<code>pBytesRead</code>)</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="374.html" title="自己手写SpringMVC">374.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/自己手写SpringMVC/" rel="tag"># 自己手写SpringMVC</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/06/17/jvm-e7-b3-bb-e5-88-97-e6-80-bb-e7-bb-93/" rel="next" title="JVM系列总结">
+                <i class="fa fa-chevron-left"></i> JVM系列总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/06/23/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99-e6-95-b0-e6-8d-ae-e5-ba-93-e8-bf-9e-e6-8e-a5-e6-b1-a0-e5-92-8cspringdata/" rel="prev" title="自己手写数据库连接池和SpringData">
+                自己手写数据库连接池和SpringData <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://example.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#github-地址：传送门-（更新了使用手册）"><span class="nav-number">1.</span> <span class="nav-text">github 地址：传送门   （更新了使用手册）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#打包好了：-Download-可以引入到项目使用啦～"><span class="nav-number">2.1.</span> <span class="nav-text">打包好了： Download , 可以引入到项目使用啦～</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用到的-jar-包：bcel-6-0-jar-commons-beanutils-jar-json-20170516-jar-日志组件-logback"><span class="nav-number">2.2.</span> <span class="nav-text">用到的 jar 包：bcel-6.0.jar   commons-beanutils.jar  json-20170516.jar  日志组件: logback</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#那么怎么使用呢？"><span class="nav-number">3.</span> <span class="nav-text">那么怎么使用呢？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#其实使用上-springmvc-差不多，就这样。-有什么-bug-可以告诉我阿！-告诉我阿-！-我阿！-阿！！！"><span class="nav-number">3.1.</span> <span class="nav-text">其实使用上 springmvc 差不多，就这样。 有什么 bug 可以告诉我阿！ 告诉我阿 ！ 我阿！ 阿！！！</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重定向和转发"><span class="nav-number">4.</span> <span class="nav-text">重定向和转发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#接受单字段-可以传入model对象（仅能传输对象）也可以传入request和response对象​"><span class="nav-number">5.</span> <span class="nav-text">接受单字段 可以传入model对象（仅能传输对象）也可以传入request和response对象​</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#封装实体"><span class="nav-number">6.</span> <span class="nav-text">封装实体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#返回json-需要返回json对象并且在方法上添加-Json注解"><span class="nav-number">7.</span> <span class="nav-text">返回json  需要返回json对象并且在方法上添加@Json注解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#上传文件（目前仅能单文件上传）"><span class="nav-number">8.</span> <span class="nav-text">上传文件（目前仅能单文件上传）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">XiuYu.Ge</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/';
+          this.page.identifier = '2017/06/19/e8-87-aa-e5-b7-b1-e6-89-8b-e5-86-99springmvc/';
+          this.page.title = '自己手写SpringMVC';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

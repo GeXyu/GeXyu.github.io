@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Spring源码分析-IOC（四）BeanDefinition解析和注册," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="BeanDefinition解析上文说到按照Spring的Bean规则将document转换成BeanDefinition是由BeanDefinitionDocumentReader完成。BeanDefinitionDocumentReader调用了registerBeanDefinitions方法而这个方法又调用了doRegisterBeanDefinitions方法。 protected vo">
+<meta name="keywords" content="Spring源码分析-IOC（四）BeanDefinition解析和注册">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring源码分析-IOC（四）BeanDefinition解析和注册">
+<meta property="og:url" content="http://www.zzcode.cn/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="BeanDefinition解析上文说到按照Spring的Bean规则将document转换成BeanDefinition是由BeanDefinitionDocumentReader完成。BeanDefinitionDocumentReader调用了registerBeanDefinitions方法而这个方法又调用了doRegisterBeanDefinitions方法。 protected vo">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-28T01:43:38.804Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring源码分析-IOC（四）BeanDefinition解析和注册">
+<meta name="twitter:description" content="BeanDefinition解析上文说到按照Spring的Bean规则将document转换成BeanDefinition是由BeanDefinitionDocumentReader完成。BeanDefinitionDocumentReader调用了registerBeanDefinitions方法而这个方法又调用了doRegisterBeanDefinitions方法。 protected vo">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/"/>
+
+
+
+
+
+  <title>Spring源码分析-IOC（四）BeanDefinition解析和注册 | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring源码分析-IOC（四）BeanDefinition解析和注册</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-21T17:02:43+08:00">
+                2017-04-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Spring源码分析-IOC（四）BeanDefinition解析和注册/" itemprop="url" rel="index">
+                    <span itemprop="name">Spring源码分析-IOC（四）BeanDefinition解析和注册</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/" class="leancloud_visitors" data-flag-title="Spring源码分析-IOC（四）BeanDefinition解析和注册">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="BeanDefinition解析"><a href="#BeanDefinition解析" class="headerlink" title="BeanDefinition解析"></a><strong>BeanDefinition解析</strong></h2><p>上文说到按照Spring的Bean规则将document转换成BeanDefinition是由BeanDefinitionDocumentReader完成。BeanDefinitionDocumentReader调用了registerBeanDefinitions方法而这个方法又调用了doRegisterBeanDefinitions方法。</p>
+<p>protected void doRegisterBeanDefinitions(Element root) {<br>        BeanDefinitionParserDelegate parent = this.delegate;<br>        this.delegate = createDelegate(getReaderContext(), root, parent);</p>
+<pre><code>if (this.delegate.isDefaultNamespace(root)) {
+    String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
+    if (StringUtils.hasText(profileSpec)) {
+        String\[\] specifiedProfiles = StringUtils.tokenizeToStringArray(
+                profileSpec, BeanDefinitionParserDelegate.MULTI\_VALUE\_ATTRIBUTE_DELIMITERS);
+        if (!getReaderContext().getEnvironment().acceptsProfiles(specifiedProfiles)) {
+            return;
+        }
+    }
+}
+ // 解析Bean定义之前, 增强解析过程的可扩展性 
+preProcessXml(root);
+</code></pre><p> // 从Document的根元素开始进行Bean定义的Document对象<br>parseBeanDefinitions(root, this.delegate);<br>        postProcessXml(root);</p>
+<pre><code>    this.delegate = parent;
+}
+</code></pre><p>protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {<br>        if (delegate.isDefaultNamespace(root)) {<br>            NodeList nl = root.getChildNodes();<br>            for (int i = 0; i &lt; nl.getLength(); i++) {<br>                Node node = nl.item(i);<br>                if (node instanceof Element) {<br>                    Element ele = (Element) node;<br>                    if (delegate.isDefaultNamespace(ele)) {<br>                        parseDefaultElement(ele, delegate);<br>                    }<br>                    else {<br>                        delegate.parseCustomElement(ele);<br>                    }<br>                }<br>            }<br>        }<br>        else {<br>            delegate.parseCustomElement(root);<br>        }<br>    }</p>
+<pre><code>private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
+    if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
+        importBeanDefinitionResource(ele);
+    }
+    else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {
+        processAliasRegistration(ele);
+    }
+    else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
+        processBeanDefinition(ele, delegate);
+    }
+    else if (delegate.nodeNameEquals(ele, NESTED\_BEANS\_ELEMENT)) {
+        // recurse
+        doRegisterBeanDefinitions(ele);
+    }
+}
+</code></pre><p>由于篇幅原因我们就看一下Bean标签的的解析</p>
+<p>//由BeanDefinitionParserDelegate进行解析，将结果存放到BeanDefinitionHolder<br>protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {<br>        //BeanDefinitionHolder是BeanDefinition的封装，封装了BeanDefinition，bean的名字别名等<br>        //用BeanDefinitionHolder来向IOC容器注册<br>        BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);<br>        if (bdHolder != null) {<br>            bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);<br>            try {<br>                // Register the final decorated instance.<br>                //向IOC容器注册Bean<br>                BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());<br>            }<br>            catch (BeanDefinitionStoreException ex) {<br>                getReaderContext().error(“Failed to register bean definition with name ‘“ +<br>                        bdHolder.getBeanName() + “‘“, ele, ex);<br>            }<br>            // Send registration event.<br>            getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));<br>        }<br>    }</p>
+<p>spring的BeanDefinition解析是在BeanDefinitionParserDelegate完成的。解析完成以后会把解析结果放到BeanDefinition对象中并设置到BeanDefinitionHolder中去。继续向下就会看到对Bean的id name等属性的处理。</p>
+<p>//调用入口<br>    public BeanDefinitionHolder parseBeanDefinitionElement(Element ele) {<br>        return parseBeanDefinitionElement(ele, null);<br>    }</p>
+<pre><code>/\*\*
+ \* Parses the supplied {@code &lt;bean&gt;} element. May return {@code null}
+ \* if there were errors during parse. Errors are reported to the
+ \* {@link org.springframework.beans.factory.parsing.ProblemReporter}.
+ */
+public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, BeanDefinition containingBean) {
+    //取得&lt;Bean&gt;元素中定义的ID name 和Alaiase属性的值
+    String id = ele.getAttribute(ID_ATTRIBUTE);
+    String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
+
+    List&lt;String&gt; aliases = new ArrayList&lt;String&gt;();
+    if (StringUtils.hasLength(nameAttr)) {
+        String\[\] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI\_VALUE\_ATTRIBUTE_DELIMITERS);
+        aliases.addAll(Arrays.asList(nameArr));
+    }
+
+    String beanName = id;
+    if (!StringUtils.hasText(beanName) &amp;&amp; !aliases.isEmpty()) {
+        beanName = aliases.remove(0);
+        if (logger.isDebugEnabled()) {
+            logger.debug(&quot;No XML &apos;id&apos; specified - using &apos;&quot; + beanName +
+                    &quot;&apos; as bean name and &quot; + aliases + &quot; as aliases&quot;);
+        }
+    }
+
+    if (containingBean == null) {
+        checkNameUniqueness(beanName, aliases, ele);
+    }
+    //这个方法是对Bean元素的详细解析
+    AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
+    if (beanDefinition != null) {
+        if (!StringUtils.hasText(beanName)) {
+            try {
+                if (containingBean != null) {
+                    beanName = BeanDefinitionReaderUtils.generateBeanName(
+                            beanDefinition, this.readerContext.getRegistry(), true);
+                }
+                else {
+                    beanName = this.readerContext.generateBeanName(beanDefinition);
+                    // Register an alias for the plain bean class name, if still possible,
+                    // if the generator returned the class name plus a suffix.
+                    // This is expected for Spring 1.2/2.0 backwards compatibility.
+                    String beanClassName = beanDefinition.getBeanClassName();
+                    if (beanClassName != null &amp;&amp;
+                            beanName.startsWith(beanClassName) &amp;&amp; beanName.length() &gt; beanClassName.length() &amp;&amp;
+                            !this.readerContext.getRegistry().isBeanNameInUse(beanClassName)) {
+                        aliases.add(beanClassName);
+                    }
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug(&quot;Neither XML &apos;id&apos; nor &apos;name&apos; specified - &quot; +
+                            &quot;using generated bean name \[&quot; + beanName + &quot;\]&quot;);
+                }
+            }
+            catch (Exception ex) {
+                error(ex.getMessage(), ele);
+                return null;
+            }
+        }
+        String\[\] aliasesArray = StringUtils.toStringArray(aliases);
+        return new BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);
+    }
+
+    return null;
+}
+</code></pre><p>上面介绍了对bean元素进行解析的过程，也就是BeanDefinition根据xml对bean定义而被创建的过程。其实这个BeanDefinition就是对Bean的抽象定义。继续看一下如何对Bean元素的解析</p>
+<p>public AbstractBeanDefinition parseBeanDefinitionElement(<br>            Element ele, String beanName, BeanDefinition containingBean) {</p>
+<pre><code>    this.parseState.push(new BeanEntry(beanName));
+    //这里只读取&lt;Bean&gt;中定义的class名字，然后载入到BeanDefinition
+    String className = null;
+    if (ele.hasAttribute(CLASS_ATTRIBUTE)) {
+        className = ele.getAttribute(CLASS_ATTRIBUTE).trim();
+    }
+
+    try {
+        String parent = null;
+        if (ele.hasAttribute(PARENT_ATTRIBUTE)) {
+            parent = ele.getAttribute(PARENT_ATTRIBUTE);
+        }
+        //这里生成需要的BeanDefinition对象，为Bean定义信息的载入做准备
+        AbstractBeanDefinition bd = createBeanDefinition(className, parent);
+        //这里对Bean元素进行属性解析
+        parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
+        bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
+
+        //对各种BEAN元素信息进行解析
+        parseMetaElements(ele, bd);
+        parseLookupOverrideSubElements(ele, bd.getMethodOverrides());
+        parseReplacedMethodSubElements(ele, bd.getMethodOverrides());
+
+        parseConstructorArgElements(ele, bd);
+        parsePropertyElements(ele, bd);
+        parseQualifierElements(ele, bd);
+
+        bd.setResource(this.readerContext.getResource());
+        bd.setSource(extractSource(ele));
+
+        return bd;
+    }
+    catch (ClassNotFoundException ex) {
+        error(&quot;Bean class \[&quot; + className + &quot;\] not found&quot;, ele, ex);
+    }
+    catch (NoClassDefFoundError err) {
+        error(&quot;Class that bean class \[&quot; + className + &quot;\] depends on not found&quot;, ele, err);
+    }
+    catch (Throwable ex) {
+        error(&quot;Unexpected failure during bean definition parsing&quot;, ele, ex);
+    }
+    finally {
+        this.parseState.pop();
+    }
+
+    return null;
+}
+</code></pre><p> <bean>元素解析已经完了，而<bean>元素属性及其子元素的解析顺序为：</bean></bean></p>
+<ul>
+<li>1，解析<bean>元素的属性。</bean></li>
+<li>2，解析<description>子元素。</description></li>
+<li>3，解析<meta>子元素。</li>
+<li>4，解析<lookup-method>子元素。</lookup-method></li>
+<li>5，解析<replaced-method>子元素。</replaced-method></li>
+<li>6，解析<constructor-arg>子元素。</constructor-arg></li>
+<li>7，解析<property>子元素。</property></li>
+<li>8，解析<qualifier>子元素。解析过程中像<meta>、<qualifier>等子元素都很少使用。</qualifier></qualifier></li>
+</ul>
+<p>而下面就直接解析最常用的子元素<property>子元素。这里我们只对Property进行解析，点开parsePropertyElements方法解析property子元素来完成对BeanDefinition载入过程。</property></p>
+<p>public void parsePropertyElements(Element beanEle, BeanDefinition bd) {<br>// 遍历<bean>所有的子元素<br>        NodeList nl = beanEle.getChildNodes();<br>        for (int i = 0; i &lt; nl.getLength(); i++) {<br>            Node node = nl.item(i);<br>            if (isCandidateElement(node) &amp;&amp; nodeNameEquals(node, PROPERTY_ELEMENT)) {<br>                parsePropertyElement((Element) node, bd);<br>            }<br>        }<br>    }</bean></p>
+<pre><code>/\*\*
+ \* Parse a property element.
+ */
+public void parsePropertyElement(Element ele, BeanDefinition bd) {
+</code></pre><p> // <property>元素name属性<br>        String propertyName = ele.getAttribute(NAME_ATTRIBUTE);<br>        if (!StringUtils.hasLength(propertyName)) {<br>            error(“Tag ‘property’ must have a ‘name’ attribute”, ele);<br>            return;<br>        }<br>        this.parseState.push(new PropertyEntry(propertyName));<br>        try {<br>// 如果同一个Bean中已经有相同名字的<property>存在, 直接返回<br>// 也就是说, 如果一个Bean中定义了两个名字一样的<property>元素, 只有第一个起作用.<br>            if (bd.getPropertyValues().contains(propertyName)) {<br>                error(“Multiple ‘property’ definitions for property ‘“ + propertyName + “‘“, ele);<br>                return;<br>            }<br>// 解析<property>元素, 返回的对象对应<property>元素的解析结果, 最终封装到PropertyValue中, 并设置到BeanDefinitionHolder中<br>            Object val = parsePropertyValue(ele, bd, propertyName);<br>            PropertyValue pv = new PropertyValue(propertyName, val);<br>            parseMetaElements(ele, pv);<br>            pv.setSource(extractSource(ele));<br>            bd.getPropertyValues().addPropertyValue(pv);<br>        }<br>        finally {<br>            this.parseState.pop();<br>        }<br>    }<br>/**<br>     * Get the value of a property element. May be a list etc.<br>     * Also used for constructor arguments, “propertyName” being null in this case.<br>     */<br>    public Object parsePropertyValue(Element ele, BeanDefinition bd, String propertyName) {<br>        String elementName = (propertyName != null) ?<br>                        “<property> element for property ‘“ + propertyName + “‘“ :<br>                        “<constructor-arg> element”;</constructor-arg></property></property></property></property></property></property></p>
+<pre><code> // 检查&lt;property&gt;的子元素, 只能是ref, value, list等(description, meta除外)其中的一个. 
+NodeList nl = ele.getChildNodes();
+Element subElement = null;
+for (int i = 0; i &lt; nl.getLength(); i++) {
+    Node node = nl.item(i);
+    if (node instanceof Element &amp;&amp; !nodeNameEquals(node, DESCRIPTION_ELEMENT) &amp;&amp;
+            !nodeNameEquals(node, META_ELEMENT)) {
+        // Child element is what we&apos;re looking for.
+        if (subElement != null) {
+            error(elementName + &quot; must not contain more than one sub-element&quot;, ele);
+        }
+        else {
+            subElement = (Element) node;
+        }
+    }
+}
+</code></pre><p>// 判断property元素是否含有ref和value属性, 不允许既有ref又有value属性.<br>// 同时也不允许ref和value属性其中一个与子元素共存.<br>        boolean hasRefAttribute = ele.hasAttribute(REF_ATTRIBUTE);<br>        boolean hasValueAttribute = ele.hasAttribute(VALUE_ATTRIBUTE);<br>        if ((hasRefAttribute &amp;&amp; hasValueAttribute) ||<br>                ((hasRefAttribute || hasValueAttribute) &amp;&amp; subElement != null)) {<br>            error(elementName +<br>                    “ is only allowed to contain either ‘ref’ attribute OR ‘value’ attribute OR sub-element”, ele);<br>        }</p>
+<p> // 如果属性是ref属性, 创建一个ref的数据对象RuntimeBeanReference, 封装了ref信<br>if (hasRefAttribute) {<br>            String refName = ele.getAttribute(REF_ATTRIBUTE);<br>            if (!StringUtils.hasText(refName)) {<br>                error(elementName + “ contains empty ‘ref’ attribute”, ele);<br>            }<br>            RuntimeBeanReference ref = new RuntimeBeanReference(refName);<br>            ref.setSource(extractSource(ele));<br>            return ref;<br>        }<br>// 如果属性是value属性, 创建一个数据对象TypedStringValue, 封装了value信息<br>        else if (hasValueAttribute) {<br>            TypedStringValue valueHolder = new TypedStringValue(ele.getAttribute(VALUE_ATTRIBUTE));<br>            valueHolder.setSource(extractSource(ele));<br>            return valueHolder;<br>        }<br>// 如果当前<property>元素还有子元素<br>        else if (subElement != null) {<br>            return parsePropertySubElement(subElement, bd);<br>        }<br>        else {<br> // 以上都不是, 说明配置错误, 返回null.<br>            // Neither child element nor “ref” or “value” attribute found.<br>            error(elementName + “ must specify a ref or value”, ele);<br>            return null;<br>        }<br>    }</property></p>
+<p>如果property子元素还有子元素</p>
+<p>public Object parsePropertySubElement(Element ele, BeanDefinition bd, String defaultValueType) {<br> // 如果子元素没有使用Spring默认命名空间, 则使用用户自定义的规则解析<br>        if (!isDefaultNamespace(ele)) {<br>            return parseNestedCustomElement(ele, bd);<br>        }<br>// 如果子元素是bean元素, 则使用解析<bean>元素的方法解析<br>        else if (nodeNameEquals(ele, BEAN_ELEMENT)) {<br>            BeanDefinitionHolder nestedBd = parseBeanDefinitionElement(ele, bd);<br>            if (nestedBd != null) {<br>                nestedBd = decorateBeanDefinitionIfRequired(ele, nestedBd, bd);<br>            }<br>            return nestedBd;<br>        }<br> // 如果子元素是ref, 有且只能有bean、local和parent 3个属性中的一个<br>        else if (nodeNameEquals(ele, REF_ELEMENT)) {<br>            // A generic reference to any name of any bean.<br>// 引用普通任意的bean<br>            String refName = ele.getAttribute(BEAN_REF_ATTRIBUTE);<br>            boolean toParent = false;<br>            if (!StringUtils.hasLength(refName)) {<br>                // A reference to the id of another bean in the same XML file.<br>                  // 引用同一个XML配置文件中的bean<br>                refName = ele.getAttribute(LOCAL_REF_ATTRIBUTE);<br>                if (!StringUtils.hasLength(refName)) {<br>                    // A reference to the id of another bean in a parent context.<br>                       // 引用父容器中的bean<br>                    refName = ele.getAttribute(PARENT_REF_ATTRIBUTE);<br>                    toParent = true;<br>                    if (!StringUtils.hasLength(refName)) {<br>                        error(“‘bean’, ‘local’ or ‘parent’ is required for <ref> element”, ele);<br>                        return null;<br>                    }<br>                }<br>            }<br>// ref元素没有bean、local和parent 3个属性中的一个, 返回null.<br>            if (!StringUtils.hasText(refName)) {<br>                error(“<ref> element contains empty target attribute”, ele);<br>                return null;<br>            }<br>            RuntimeBeanReference ref = new RuntimeBeanReference(refName, toParent);<br>            ref.setSource(extractSource(ele));<br>            return ref;<br>        }<br>        else if (nodeNameEquals(ele, IDREF_ELEMENT)) {<br>            return parseIdRefElement(ele);<br>        }<br>        else if (nodeNameEquals(ele, VALUE_ELEMENT)) {<br>            return parseValueElement(ele, defaultValueType);<br>        }<br>        else if (nodeNameEquals(ele, NULL_ELEMENT)) {<br>            // It’s a distinguished null value. Let’s wrap it in a TypedStringValue<br>            // object in order to preserve the source location.<br>            TypedStringValue nullHolder = new TypedStringValue(null);<br>            nullHolder.setSource(extractSource(ele));<br>            return nullHolder;<br>        }<br>        else if (nodeNameEquals(ele, ARRAY_ELEMENT)) {<br>            return parseArrayElement(ele, bd);<br>        }<br>//如果是List子元素<br>        else if (nodeNameEquals(ele, LIST_ELEMENT)) {<br>            return parseListElement(ele, bd);<br>        }<br>        else if (nodeNameEquals(ele, SET_ELEMENT)) {<br>            return parseSetElement(ele, bd);<br>        }<br>        else if (nodeNameEquals(ele, MAP_ELEMENT)) {<br>            return parseMapElement(ele, bd);<br>        }<br>        else if (nodeNameEquals(ele, PROPS_ELEMENT)) {<br>            return parsePropsElement(ele);<br>        }<br>        else {<br>            error(“Unknown property sub-element: [“ + ele.getNodeName() + “]“, ele);<br>            return null;<br>        }<br>    }</ref></ref></bean></p>
+<p>我们以解析List为例</p>
+<p>/**<br>     * Parse a list element.<br>     */<br>    public List<object> parseListElement(Element collectionEle, BeanDefinition bd) {<br>// 获取<list>元素中的value-type属性, 即集合元素的数据类型<br>String defaultElementType = collectionEle.getAttribute(VALUE_TYPE_ATTRIBUTE);</list></object></p>
+<p>// <list>元素所有子节点<br>NodeList nl = collectionEle.getChildNodes();<br>        ManagedList<object> target = new ManagedList<object>(nl.getLength());<br>        target.setSource(extractSource(collectionEle));<br>        target.setElementTypeName(defaultElementType);<br>        target.setMergeEnabled(parseMergeAttribute(collectionEle));</object></object></list></p>
+<p>// 具体解析List元素中的值<br>        parseCollectionElements(nl, target, bd, defaultElementType);<br>        return target;<br>    }</p>
+<pre><code>/\*\*
+ \* Parse a set element.
+ */
+protected void parseCollectionElements(
+        NodeList elementNodes, Collection&lt;Object&gt; target, BeanDefinition bd, String defaultElementType) {
+</code></pre><p>// 遍历集合所有子节点<br>        for (int i = 0; i &lt; elementNodes.getLength(); i++) {<br>            Node node = elementNodes.item(i);<br>            if (node instanceof Element &amp;&amp; !nodeNameEquals(node, DESCRIPTION_ELEMENT)) {<br>// 如果子节点是Element且不是<description>节点, 则添加进ManagedList.<br>// 同时触发对下层子元素的解析, 递归调用.<br>                target.add(parsePropertySubElement((Element) node, bd, defaultElementType));<br>            }<br>        }<br>    }</description></p>
+<p>经过这样逐层的分析，我们在xml文件中定义的BeanDefinition就被整个载入到IOC容器中，并在容器中建立了数据映射。在IOC容器中建立了对应的数据结构，或者说可以看成POJO对象在IOC容器中的抽象，这些数据结构可以以AbstractBeanDefinition为入口让IOC容器执行索引，查询和操作。</p>
+<h2 id="BeanDefinition注册"><a href="#BeanDefinition注册" class="headerlink" title="BeanDefinition注册"></a><strong>BeanDefinition注册</strong></h2><p><strong>DefaultBeanDefinitionDocumentReader**</strong>的**processBeanDefinition方法对Bean进行回调注册</p>
+<p>protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {<br>        BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);<br>        if (bdHolder != null) {<br>            bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);<br>            try {<br>                // 注册BeanDefinition<br>                BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());<br>            }<br>            catch (BeanDefinitionStoreException ex) {<br>                getReaderContext().error(“Failed to register bean definition with name ‘“ +<br>                        bdHolder.getBeanName() + “‘“, ele, ex);<br>            }<br>            // Send registration event.<br>            getReaderContext().fireComponentRegistered(new BeanComponentDefinition(bdHolder));<br>        }<br>    }</p>
+<p>点开registerBeanDefinition方法</p>
+<p>public static void registerBeanDefinition(<br>            BeanDefinitionHolder definitionHolder, BeanDefinitionRegistry registry)<br>            throws BeanDefinitionStoreException {</p>
+<pre><code>// Register bean definition under primary name.
+String beanName = definitionHolder.getBeanName();
+</code></pre><p>// 向IoC容器注册BeanDefinition<br>        registry.registerBeanDefinition(beanName, definitionHolder.getBeanDefinition());</p>
+<pre><code>    // 如果解析的BeanDefinition有别名, 向容器为其注册别名. .
+    String\[\] aliases = definitionHolder.getAliases();
+    if (aliases != null) {
+        for (String aliase : aliases) {
+            registry.registerAlias(beanName, aliase);
+        }
+    }
+}
+</code></pre><p>上面的registry.registerBeanDefinition(beanName, definitionHolder.getBeanDefinition())是调用的注册位置，而BeanDefinitionRegistry仅仅是一个接口，而真正实现它的却是最原本的DefaultListableBeanFactory.registerBeanDefinition方法</p>
+<p>public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)<br>            throws BeanDefinitionStoreException {</p>
+<pre><code>Assert.hasText(beanName, &quot;Bean name must not be empty&quot;);
+Assert.notNull(beanDefinition, &quot;BeanDefinition must not be null&quot;);
+</code></pre><p>// 对解析得到的BeanDefinition校验<br>        if (beanDefinition instanceof AbstractBeanDefinition) {<br>            try {<br>                ((AbstractBeanDefinition) beanDefinition).validate();<br>            }<br>            catch (BeanDefinitionValidationException ex) {<br>                throw new BeanDefinitionStoreException(beanDefinition.getResourceDescription(), beanName,<br>                        “Validation of bean definition failed”, ex);<br>            }<br>        }</p>
+<pre><code>    BeanDefinition oldBeanDefinition;
+
+    oldBeanDefinition = this.beanDefinitionMap.get(beanName);
+    if (oldBeanDefinition != null) {
+        if (!this.allowBeanDefinitionOverriding) {
+            throw new BeanDefinitionStoreException(beanDefinition.getResourceDescription(), beanName,
+                    &quot;Cannot register bean definition \[&quot; + beanDefinition + &quot;\] for bean &apos;&quot; + beanName +
+                    &quot;&apos;: There is already \[&quot; + oldBeanDefinition + &quot;\] bound.&quot;);
+        }
+        else if (oldBeanDefinition.getRole() &lt; beanDefinition.getRole()) {
+            // e.g. was ROLE\_APPLICATION, now overriding with ROLE\_SUPPORT or ROLE_INFRASTRUCTURE
+            if (this.logger.isWarnEnabled()) {
+                this.logger.warn(&quot;Overriding user-defined bean definition for bean &apos;&quot; + beanName +
+                        &quot; with a framework-generated bean definition &apos;: replacing \[&quot; +
+                        oldBeanDefinition + &quot;\] with \[&quot; + beanDefinition + &quot;\]&quot;);
+            }
+        }
+        else {
+            if (this.logger.isInfoEnabled()) {
+                this.logger.info(&quot;Overriding bean definition for bean &apos;&quot; + beanName +
+                        &quot;&apos;: replacing \[&quot; + oldBeanDefinition + &quot;\] with \[&quot; + beanDefinition + &quot;\]&quot;);
+            }
+        }
+    }
+    else {
+        this.beanDefinitionNames.add(beanName);
+        this.manualSingletonNames.remove(beanName);
+        this.frozenBeanDefinitionNames = null;
+    }
+    this.beanDefinitionMap.put(beanName, beanDefinition);
+
+    if (oldBeanDefinition != null || containsSingleton(beanName)) {
+        resetBeanDefinition(beanName);
+    }
+}
+</code></pre><p>完成了BeanDefinition的注册，就完成了IOC容器的初始化过程，此时使用的IOC容器DefinListableBeanFactory中已经建立了整个Bean的配置信息，而且这些BeanDefinition已经可以被容器使用了，他们都BeanDefintionMap被检索和使用。容器的作用就是对这些信息进行处理和维护，这些信息就是容器建立依赖反转的基础。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="63.html" title="Spring源码分析-IOC（四）BeanDefinition解析和注册">63.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spring源码分析-IOC（四）BeanDefinition解析和注册/" rel="tag"># Spring源码分析-IOC（四）BeanDefinition解析和注册</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-b8-89-ef-bc-89-e5-ae-b9-e5-99-a8-e5-88-9d-e5-a7-8b-e5-8c-96/" rel="next" title="Spring源码分析-IOC（三）容器初始化">
+                <i class="fa fa-chevron-left"></i> Spring源码分析-IOC（三）容器初始化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/" rel="prev" title="Spring源码分析-IOC（五）依赖注入">
+                Spring源码分析-IOC（五）依赖注入 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://example.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#BeanDefinition解析"><span class="nav-number">1.</span> <span class="nav-text">BeanDefinition解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BeanDefinition注册"><span class="nav-number">2.</span> <span class="nav-text">BeanDefinition注册</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">XiuYu.Ge</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/';
+          this.page.identifier = '2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/';
+          this.page.title = 'Spring源码分析-IOC（四）BeanDefinition解析和注册';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

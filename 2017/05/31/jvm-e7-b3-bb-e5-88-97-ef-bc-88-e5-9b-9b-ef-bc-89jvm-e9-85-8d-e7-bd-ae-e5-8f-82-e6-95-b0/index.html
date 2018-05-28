@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JVM系列（四）JVM配置参数," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="不管是Minor GC还是Full GC，在GC过程中会导致程序在运行中中断，正确的选择不同的GC策略，调整JVM、GC的参数，可以极大的减少由于GC工作，而导致的程序运行中断方面的问题，进而适当的提高Java程序的工作效率。 新生代GC（Minor GC）：发生在新生代的垃圾收集动作，因为Java对象大多具备朝生夕灭的特点，所以Minor GC非常频繁，回收速度也很快。 老年代GC（Major">
+<meta name="keywords" content="JVM系列（四）JVM配置参数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM系列（四）JVM配置参数">
+<meta property="og:url" content="http://www.zzcode.cn/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="不管是Minor GC还是Full GC，在GC过程中会导致程序在运行中中断，正确的选择不同的GC策略，调整JVM、GC的参数，可以极大的减少由于GC工作，而导致的程序运行中断方面的问题，进而适当的提高Java程序的工作效率。 新生代GC（Minor GC）：发生在新生代的垃圾收集动作，因为Java对象大多具备朝生夕灭的特点，所以Minor GC非常频繁，回收速度也很快。 老年代GC（Major">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/1-4.png">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/20170531094844.png">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/20170531094742.png">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/20170531150621.png">
+<meta property="og:updated_time" content="2018-05-28T01:43:38.804Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JVM系列（四）JVM配置参数">
+<meta name="twitter:description" content="不管是Minor GC还是Full GC，在GC过程中会导致程序在运行中中断，正确的选择不同的GC策略，调整JVM、GC的参数，可以极大的减少由于GC工作，而导致的程序运行中断方面的问题，进而适当的提高Java程序的工作效率。 新生代GC（Minor GC）：发生在新生代的垃圾收集动作，因为Java对象大多具备朝生夕灭的特点，所以Minor GC非常频繁，回收速度也很快。 老年代GC（Major">
+<meta name="twitter:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/1-4.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/"/>
+
+
+
+
+
+  <title>JVM系列（四）JVM配置参数 | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JVM系列（四）JVM配置参数</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-31T11:21:23+08:00">
+                2017-05-31
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM系列（四）JVM配置参数/" itemprop="url" rel="index">
+                    <span itemprop="name">JVM系列（四）JVM配置参数</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/" class="leancloud_visitors" data-flag-title="JVM系列（四）JVM配置参数">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>不管是Minor GC还是Full GC，在GC过程中会导致程序在运行中中断，正确的选择不同的GC策略，调整JVM、GC的参数，可以极大的减少由于GC工作，而导致的程序运行中断方面的问题，进而适当的提高Java程序的工作效率。</p>
+<p>新生代GC（Minor GC）：发生在新生代的垃圾收集动作，因为Java对象大多具备朝生夕灭的特点，所以Minor GC非常频繁，回收速度也很快。</p>
+<p>老年代GC（Major GC/Full GC）：指发生在老年代的GC动作，出现了Full GC，一般会伴随至少一次Minor GC（但非绝对）。</p>
+<p><strong>GC日志</strong>  </p>
+<hr>
+<p>阅读GC日志是理解Java虚拟机内存问题的基础技能，它只是一些人为的规则。在程序运行中可以通过配置<strong>-XX:+PrintGCDetails</strong>来打印日志输出。</p>
+<p><img src="http://www.zzcode.cn/wp-content/uploads/2017/05/1-4.png" alt="1"></p>
+<p><img src="http://www.zzcode.cn/wp-content/uploads/2017/05/20170531094844.png" alt="20170531094844"></p>
+<p>然后再控制台会打印出GC 信息</p>
+<p><img src="http://www.zzcode.cn/wp-content/uploads/2017/05/20170531094742.png" alt="_20170531094742"></p>
+<p>首先 GC日志的开头 “GC”或者是“Full GC”说明这次垃圾收集的停顿类型，而不是区分为新生代还是老年代的垃圾收集动作，如果有Full GC说明这次GC过程中发生了Stop The World，从图上看显然这次GC中没有发生Stop The World。接下来PSYoungGen 表示使用的垃圾收集器为Parallel Scavenge收集器。</p>
+<p>后面方括号5520K-&gt;1280K(8192K)表示“GC前该区域已使用的容量 -&gt; GC后该内存区域已使用容量（改内存的总容量）”，而方括号外面的5520K-&gt;1280K(18432K) 表示”GC前Java堆已使用的容量-&gt;GC后Java堆已使用的容量”</p>
+<p>再往后 0.0027784 secs 表示该内存区域GC所占用的时间，单位是时间。而[Times: user=0.00 sys=0.00, real=0.00 secs] 这里面对user,sys,real 与Linuxd time命令所输出的时间含义一样，分别表示用户态消耗的CPU时间，内核态消耗的CPU事件和操作开始到结束所经过的撞钟时间（Wall Clock Time）。</p>
+<p>Heap以后就是GC堆的详细信息</p>
+<p>在PSYoungGen可以看到新生代的Eden，Form， To区域。这里“ PSYoungGen      total 8192K used 6588K”其中total表示<strong>新生代</strong>使用的区域总和=Eden + 一个Survivor区， used  6588K表示使用了6588K。“ [0x000000000b090000, 0x000000000ba90000, 0x000000000ba90000)”分别表示地址的低边界，当前边界，最高边界。可以通过（最高边界-最低边界）/1024/1024得到区域大小，以M为单位。</p>
+<p>PSOldGen表示老年代后面的参数代表和PSYoungGen 的相同。PSPermGen表示方法区，参数和上面两者相同，但是该区域一般不发生GC 但是不代表不发生GC。</p>
+<p>Java代码和jvm命令（前面几个参数后面会说到）</p>
+<p>//-Xmx20M -Xms20M -Xmn7M -XX:+PrintGCDetails<br>public class Demo4 {<br>    public static void main(String[] args) {<br>        byte[] b=null;<br>        for(int i=0;i&lt;10;i++){<br>              b=new byte[1*1024*1024];<br>        }<br>    }<br>}</p>
+<p>其他的日志打印命令</p>
+<ul>
+<li><p>-XX:+printGC（打印GC的简要信息）</p>
+</li>
+<li><p>-XX:+PrintGCTimeStamps 输出GC的时间戳（以基准时间的形式，需要与打印GC信息配合使用）</p>
+</li>
+<li><p>-XX:+PrintGCDateStamps  输出GC的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800 需要与打印GC信息配合使用）</p>
+</li>
+<li><p>-XX:+PrintHeapAtGC   在进行GC的前后打印出堆的信息 </p>
+</li>
+<li><p>-Xloggc:E:/logs/gc.log  指定位置输出 （E:/logs的gc.log文件）</p>
+</li>
+<li><p>-XX:+TraceClassLoading  打印类加载的信息</p>
+</li>
+<li><p>-XX:+PrintClassHistogram  按下Ctrl+Break后，打印类的信息（分别显示：序号、实例数量、总大小、类型）</p>
+</li>
+</ul>
+<p><strong>堆分配命令</strong>  </p>
+<hr>
+<h3 id="Xmx-–Xms-指定最大堆-最小堆"><a href="#Xmx-–Xms-指定最大堆-最小堆" class="headerlink" title="-Xmx –Xms 指定最大堆 最小堆"></a><strong>-Xmx –Xms 指定最大堆 最小堆</strong></h3><p>//-Xmx20m -Xms20m -XX:+PrintGCDetails<br>public class Demo1 {<br>    public static void main(String[] args) {<br>        //运行时的最大内存（byte为单位）<br>        System.out.println(Runtime.getRuntime().maxMemory() /1024.0 /1024 + “M”);<br>        System.out.println(Runtime.getRuntime().freeMemory() /1024.0/1024 + “M”);<br>        System.out.println(Runtime.getRuntime().totalMemory() /1024.0 /1024 + “M”);</p>
+<pre><code>    byte\[\] b=new byte\[1\*1024\*1024\];
+    System.out.println(&quot;---分配了1M空间给数组----&quot;);
+    System.out.println(Runtime.getRuntime().maxMemory() /1024.0 /1024 + &quot;M&quot;);    
+    System.out.println(Runtime.getRuntime().freeMemory() /1024.0/1024 + &quot;M&quot;);    
+    System.out.println(Runtime.getRuntime().totalMemory() /1024.0 /1024 + &quot;M&quot;);
+
+    byte\[\] b4 =new byte\[4\*1024\*1024\];
+    System.out.println(&quot;----分配了4M空间给数组---&quot;);
+    System.out.println(Runtime.getRuntime().maxMemory() /1024.0 /1024 + &quot;M&quot;);    
+    System.out.println(Runtime.getRuntime().freeMemory() /1024.0/1024 + &quot;M&quot;);    
+    System.out.println(Runtime.getRuntime().totalMemory() /1024.0 /1024 + &quot;M&quot;);
+
+
+    System.gc();
+    System.out.println(&quot;------GC后-----&quot;);
+    System.out.println(Runtime.getRuntime().maxMemory() /1024.0 /1024 + &quot;M&quot;);    
+    System.out.println(Runtime.getRuntime().freeMemory() /1024.0/1024 + &quot;M&quot;);    
+    System.out.println(Runtime.getRuntime().totalMemory() /1024.0 /1024 + &quot;M&quot;);
+}
+</code></pre><p>}</p>
+<p>运行的结果</p>
+<p>17.8125M<br>5.6421966552734375M<br>5.9375M<br>—分配了1M空间给数组—-<br>17.8125M<br>4.642173767089844M<br>5.9375M<br>—-分配了4M空间给数组—<br>17.8125M<br>4.70465087890625M<br>10.0M<br>——GC后—–<br>17.8125M<br>4.741142272949219M<br>10.0M</p>
+<p>我们结合代码看一下，首先我们设置了Java堆最大为20M 和 最小堆（初始值）为5M，我们通过runtime接口得到运行时的数据分别是最大空间，空闲空间和总空间。我们第一次打印分别是17M 5M和5.9M。</p>
+<p>当我们给分配1M空间时，我们的总空间可以容纳1M空间，所以第二次打印17M，4M，5.9M，可以看出空闲空间变小了因为分配了1M空间，所以说Java分配空间时Java会尽可能维持在最小堆。</p>
+<p>当我们再分配4M空间时，我们的空闲空间分配不了4M空间，总空间会扩容。所以分配4M空间后Java堆的情况分别是：17M，4M，10M。</p>
+<p>当我们GC一次后，可以看到空闲空间变大了</p>
+<h3 id="Xmn指定新生代大小"><a href="#Xmn指定新生代大小" class="headerlink" title="Xmn指定新生代大小"></a><strong>Xmn指定新生代大小</strong></h3><p>这次我们把Java堆的最大设置为20M，初始值也为20M 把新生代大小设置为1M，执行下面代码看一下GC日志。</p>
+<p>//-Xmx20m -Xms20m -Xmn1m -XX:+PrintGCDetails<br>public static void main(String[] args) {<br>        byte[] b=null;<br>        for(int i=0;i&lt;10;i++){<br>              b=new byte[1*1024*1024];<br>        }<br>    }</p>
+<p>打印日志</p>
+<p>Heap<br> PSYoungGen      total 896K, used 305K [0x000000000b920000, 0x000000000ba20000, 0x000000000ba20000)<br>  eden space 768K, 39% used [0x000000000b920000,0x000000000b96c560,0x000000000b9e0000)<br>  from space 128K, 0% used [0x000000000ba00000,0x000000000ba00000,0x000000000ba20000)<br>  to   space 128K, 0% used [0x000000000b9e0000,0x000000000b9e0000,0x000000000ba00000)<br> PSOldGen        total 19456K, used 10240K [0x000000000a620000, 0x000000000b920000, 0x000000000b920000)<br>  object space 19456K, 52% used [0x000000000a620000,0x000000000b0200f0,0x000000000b920000)<br> PSPermGen       total 21248K, used 2972K [0x0000000005220000, 0x00000000066e0000, 0x000000000a620000)<br>  object space 21248K, 13% used [0x0000000005220000,0x00000000055072e0,0x00000000066e0000)</p>
+<p>可以从GC日志中看到因为新生代太小不能够分配1M空间： 1，没有发生GC    2，对象直接分配到老年代</p>
+<p><strong>如果我们把-Xmn（新生代大小）设置的大一些,执行下面的代码（同样的代码）</strong></p>
+<p>//-Xmx20M -Xms20M -Xmn15m -XX:+PrintGCDetails<br>public static void main(String[] args) {<br>        byte[] b=null;<br>        for(int i=0;i&lt;10;i++){<br>              b=new byte[1*1024*1024];<br>        }<br>    }</p>
+<p>GC日志：</p>
+<p>Heap<br> PSYoungGen      total 13440K, used 10931K [0x000000000ad20000, 0x000000000bc20000, 0x000000000bc20000)<br>  eden space 11520K, 94% used [0x000000000ad20000,0x000000000b7ccf38,0x000000000b860000)<br>  from space 1920K, 0% used [0x000000000ba40000,0x000000000ba40000,0x000000000bc20000)<br>  to   space 1920K, 0% used [0x000000000b860000,0x000000000b860000,0x000000000ba40000)<br> PSOldGen        total 5120K, used 0K [0x000000000a620000, 0x000000000ab20000, 0x000000000ad20000)<br>  object space 5120K, 0% used [0x000000000a620000,0x000000000a620000,0x000000000ab20000)<br> PSPermGen       total 21248K, used 2972K [0x0000000005220000, 0x00000000066e0000, 0x000000000a620000)<br>  object space 21248K, 13% used [0x0000000005220000,0x00000000055072e0,0x00000000066e0000)</p>
+<p>新生代可空间比较大可以容纳10M的数组所以没有发生GC，全部分配在eden而且老年代没有使用。</p>
+<p><strong>如果我们把新生代大小设置为7M执行上面的代码</strong></p>
+<p> -Xmx20M -Xms20M -Xmn7M -XX:+PrintGCDetails</p>
+<p>GC日志：</p>
+<p>[GC [PSYoungGen: 4418K-&gt;256K(6272K)] 4418K-&gt;1280K(19584K), 0.0079350 secs] [Times: user=0.00 sys=0.00, real=0.01 secs]<br>[GC [PSYoungGen: 5433K-&gt;288K(6272K)] 6457K-&gt;2336K(19584K), 0.0026655 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>Heap<br> PSYoungGen      total 6272K, used 1419K [0x000000000b380000, 0x000000000ba80000, 0x000000000ba80000)<br>  eden space 5376K, 21% used [0x000000000b380000,0x000000000b49aed0,0x000000000b8c0000)<br>  from space 896K, 32% used [0x000000000b9a0000,0x000000000b9e8000,0x000000000ba80000)<br>  to   space 896K, 0% used [0x000000000b8c0000,0x000000000b8c0000,0x000000000b9a0000)<br> PSOldGen        total 13312K, used 2048K [0x000000000a680000, 0x000000000b380000, 0x000000000b380000)<br>  object space 13312K, 15% used [0x000000000a680000,0x000000000a880030,0x000000000b380000)<br> PSPermGen       total 21248K, used 2981K [0x0000000005280000, 0x0000000006740000, 0x000000000a680000)<br>  object space 21248K, 14% used [0x0000000005280000,0x00000000055697e8,0x0000000006740000)</p>
+<p>可以看出发生了2次新生代GC，因为Survivor区太小，所以部分对象需要老年代担保，所以老年代使用了15%。</p>
+<h3 id="XX-SurvivorRatio"><a href="#XX-SurvivorRatio" class="headerlink" title="-XX:SurvivorRatio"></a><strong>-XX:SurvivorRatio</strong></h3><p><strong>-XX:SurvivorRatio</strong>命令是设置两个Survivor区和eden的比，譬如：-XX:SurvivorRatio8表示 两个Survivor :eden=2:8，即一个Survivor占年轻代的1/10。</p>
+<p>我们在原来的jvm命令基础再添加-XX:SurvivorRatio=2 参数，表示Survivor与Eden比例为2：2即两个区域一样大。</p>
+<p>-Xmx20M -Xms20M -Xmn7M -XX:+PrintGCDetails -XX:SurvivorRatio=2 </p>
+<p>GC日志</p>
+<p>[GC [PSYoungGen: 3423K-&gt;1280K(5376K)] 3423K-&gt;1280K(18688K), 0.0069522 secs] [Times: user=0.00 sys=0.00, real=0.01 secs]<br>[GC [PSYoungGen: 4390K-&gt;1280K(5376K)] 4390K-&gt;1280K(18688K), 0.0018699 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>[GC [PSYoungGen: 4377K-&gt;1312K(5376K)] 4377K-&gt;1312K(18688K), 0.0007972 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>Heap<br> PSYoungGen      total 5376K, used 2407K [0x000000000b270000, 0x000000000b970000, 0x000000000b970000)<br>  eden space 3584K, 30% used [0x000000000b270000,0x000000000b381f78,0x000000000b5f0000)<br>  from space 1792K, 73% used [0x000000000b5f0000,0x000000000b738018,0x000000000b7b0000)<br>  to   space 1792K, 0% used [0x000000000b7b0000,0x000000000b7b0000,0x000000000b970000)<br> PSOldGen        total 13312K, used 0K [0x000000000a570000, 0x000000000b270000, 0x000000000b270000)<br>  object space 13312K, 0% used [0x000000000a570000,0x000000000a570000,0x000000000b270000)<br> PSPermGen       total 21248K, used 2981K [0x0000000005170000, 0x0000000006630000, 0x000000000a570000)<br>  object space 21248K, 14% used [0x0000000005170000,0x00000000054597e8,0x0000000006630000)</p>
+<p>可以从GC日志中看到进行了3次新生代的GC ，from区和to区增大，from+to = eden</p>
+<h3 id="XX-NewRatio-1"><a href="#XX-NewRatio-1" class="headerlink" title="-XX:NewRatio=1"></a><strong>-XX:NewRatio=1</strong></h3><p><strong>-XX:NewRatio</strong>命令是设置新生代（eden+2*s）和老年代（不包含永久区）的比值，譬如-XX:NewRatio<strong>=</strong>4 表示 新生代:老年代=1:4，即年轻代占堆的1/5</p>
+<p>我们再次添加一个参数 <strong>-XX:NewRatio=1</strong>表示新生代与老年代的比例为1：1</p>
+<p> -Xmx20M -Xms20M -XX:NewRatio=1 -XX:SurvivorRatio=2  -XX:+PrintGCDetails  </p>
+<p>GC日志：</p>
+<p>[GC [PSYoungGen: 4419K-&gt;1280K(7680K)] 4419K-&gt;1280K(17920K), 0.0008120 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>[GC [PSYoungGen: 5430K-&gt;1280K(7680K)] 5430K-&gt;1280K(17920K), 0.0011638 secs] [Times: user=0.00 sys=0.02, real=0.00 secs]<br>Heap<br> PSYoungGen      total 7680K, used 3466K [0x000000000af40000, 0x000000000b940000, 0x000000000b940000)<br>  eden space 5120K, 42% used [0x000000000af40000,0x000000000b162ab0,0x000000000b440000)<br>  from space 2560K, 50% used [0x000000000b6c0000,0x000000000b800018,0x000000000b940000)<br>  to   space 2560K, 0% used [0x000000000b440000,0x000000000b440000,0x000000000b6c0000)<br> PSOldGen        total 10240K, used 0K [0x000000000a540000, 0x000000000af40000, 0x000000000af40000)<br>  object space 10240K, 0% used [0x000000000a540000,0x000000000a540000,0x000000000af40000)<br> PSPermGen       total 21248K, used 2981K [0x0000000005140000, 0x0000000006600000, 0x000000000a540000)<br>  object space 21248K, 14% used [0x0000000005140000,0x00000000054297e8,0x0000000006600000)</p>
+<p>进行了两次新生代的GC。比例分配，新生代 老年代对半开，对象全部留在新生代。</p>
+<p><strong>如果我们在此基础上减少Survivor区的大小，即把-XX:SurvivorRatio的值增大</strong></p>
+<p>-Xmx20M -Xms20M -XX:NewRatio=1 -XX:SurvivorRatio=3  -XX:+PrintGCDetails</p>
+<p>GC日志：</p>
+<p>[GC [PSYoungGen: 5520K-&gt;1280K(8192K)] 5520K-&gt;1280K(18432K), 0.0008124 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>Heap<br> PSYoungGen      total 8192K, used 6588K [0x000000000afc0000, 0x000000000b9c0000, 0x000000000b9c0000)<br>  eden space 6144K, 86% used [0x000000000afc0000,0x000000000b4ef2c8,0x000000000b5c0000)<br>  from space 2048K, 62% used [0x000000000b5c0000,0x000000000b700048,0x000000000b7c0000)<br>  to   space 2048K, 0% used [0x000000000b7c0000,0x000000000b7c0000,0x000000000b9c0000)<br> PSOldGen        total 10240K, used 0K [0x000000000a5c0000, 0x000000000afc0000, 0x000000000afc0000)<br>  object space 10240K, 0% used [0x000000000a5c0000,0x000000000a5c0000,0x000000000afc0000)<br> PSPermGen       total 21248K, used 2981K [0x00000000051c0000, 0x0000000006680000, 0x000000000a5c0000)<br>  object space 21248K, 14% used [0x00000000051c0000,0x00000000054a97e8,0x0000000006680000)</p>
+<p>进行了1次GC，老年代未使用，新空间使用率更高</p>
+<h3 id="XX-HeapDumpOnOutOfMemoryError"><a href="#XX-HeapDumpOnOutOfMemoryError" class="headerlink" title="-XX:+HeapDumpOnOutOfMemoryError"></a><strong>-XX:+HeapDumpOnOutOfMemoryError</strong></h3><p>-XX:+HeapDumpOnOutOfMemoryError发生OOM时导出堆到文件，可以与<strong>-XX:+HeapDumpPath</strong>（导出路径）配合使用。</p>
+<p>我们可以设置下面jvm的命令，并执行下面的代码</p>
+<p>//-Xmx20m -Xms5m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=d:/a.dump<br>public static void main(String[] args) {<br>        List list = new ArrayList<object>();<br>        for(int i=0;i&lt;25; i++){<br>            list.add(new byte[1*1024*1024]);<br>        }<br>    }</object></p>
+<p>控制台输出</p>
+<p>java.lang.OutOfMemoryError: Java heap space<br>Dumping heap to E:/a.dump …<br>Heap dump file created [19910369 bytes in 0.030 secs]<br>Exception in thread “main” java.lang.OutOfMemoryError: Java heap space<br>    at cn.xiuyu.jvm.head.Demo8.main(Demo8.java:14)</p>
+<p>可以用Java自带的工具VisualVM来看一下jump文件</p>
+<p><img src="http://www.zzcode.cn/wp-content/uploads/2017/05/20170531150621.png" alt="20170531150621"></p>
+<p>当然，你也可以再添加一个参数<strong>-XX:OnOutOfMemoryError=D:/rintstack.bat %p</strong>，当发生OOM的时候执行一个脚本，重启程序或者是发送邮件都是可以的。</p>
+<h3 id="堆总结"><a href="#堆总结" class="headerlink" title="堆总结"></a><strong>堆总结</strong></h3><p>根据实际事情调整新生代和幸存代的大小，官方推荐新生代占堆的3/8，幸存代占新生代的1/10，在OOM时，记得Dump出堆，确保可以排查现场问题。</p>
+<p><strong>永久区分配参数</strong>  </p>
+<hr>
+<p><strong>-XX:PermSize </strong>表示永久区初始内存分配大小</p>
+<p><strong>-XX:MaxPermSize </strong>表示对永久区分配的内存的最大上限。</p>
+<p>在使用CGLIB等一些类库的时候（CGLIB就是“字节码生成”，javac可以说是这些类库的老祖宗。），会产生大量的字节码，这些字节码可能会撑爆永久区造成OutOfMemoryError  </p>
+<p>可以设置XX:PermSize和-XX:MaxPermSize参数试永久区撑爆，同时还能看到永久区的GC。</p>
+<p>首先需要写一个产生对象的工厂对象</p>
+<p>public class ObjectFactory implements MethodInterceptor{</p>
+<pre><code>private Object target;
+public ObjectFactory(Object target){
+    this.target = target;
+}
+public Object getObject(){
+    Enhancer en = new Enhancer();
+    en.setSuperclass(target.getClass());
+    en.setCallback(this);
+    return en.create();
+}
+
+@Override
+public Object intercept(Object proxy, Method method, Object\[\] args,
+        MethodProxy arg3) throws Throwable {    
+    return method.invoke(proxy, args);
+}
+</code></pre><p>}</p>
+<p>然后写一个main方法，运行Main前，设置JVM参数</p>
+<p>//-XX:+PrintGCDetails -XX:PermSize=1M -XX:MaxPermSize=1M<br>public class Demo9 {<br>    public static void main(String[] args) {<br>        ObjectFactory factory = new ObjectFactory(new Demo9());<br>        for(int i=0; i&lt;1000000000;i++){<br>            factory.getObject();</p>
+<pre><code>    }
+}
+</code></pre><p>}</p>
+<p>GC日志：</p>
+<p>[GC [PSYoungGen: 0K-&gt;0K(39296K)] 103K-&gt;103K(716544K), 0.0002266 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>[Full GC [PSYoungGen: 0K-&gt;0K(39296K)] [PSOldGen: 103K-&gt;103K(677248K)] 103K-&gt;103K(716544K) [PSPermGen: 2046K-&gt;2046K(2048K)], 0.0025604 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>[GC [PSYoungGen: 0K-&gt;0K(39296K)] 103K-&gt;103K(716544K), 0.0000936 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>[Full GC [PSYoungGen: 0K-&gt;0K(39296K)] [PSOldGen: 103K-&gt;103K(677248K)] 103K-&gt;103K(716544K) [PSPermGen: 2047K-&gt;2047K(2048K)], 0.0027156 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] <a href="https://www.viagrapascherfr.com/generique-viagra-tarif/" target="_blank" rel="noopener">https://www.viagrapascherfr.com/generique-viagra-tarif/</a><br>[GC [PSYoungGen: 0K-&gt;0K(41728K)] 103K-&gt;103K(718976K), 0.0002800 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>[Full GC [PSYoungGen: 0K-&gt;0K(41728K)] [PSOldGen: 103K-&gt;102K(677248K)] 103K-&gt;102K(718976K) [PSPermGen: 2047K-&gt;2047K(2048K)], 0.0044607 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]<br>Error occurred during initialization of VM<br>java.lang.OutOfMemoryError: PermGen space<br>    at java.lang.StringCoding.encode(StringCoding.java:266)<br>    at java.lang.String.getBytes(String.java:947)<br>    at java.lang.ClassLoader$NativeLibrary.load(Native Method)<br>    at java.lang.ClassLoader.loadLibrary0(ClassLoader.java:1778)<br>    at java.lang.ClassLoader.loadLibrary(ClassLoader.java:1695)<br>    at java.lang.Runtime.loadLibrary0(Runtime.java:823)<br>    at java.lang.System.loadLibrary(System.java:1030)<br>    at java.lang.System.initializeSystemClass(System.java:1077)</p>
+<p>从日志中可以看到由于产生大量的类，撑爆了永久区。同时还可以看到永久区的回收日志，说明永久去是回收的。</p>
+<p><strong>栈大小分配</strong>  </p>
+<hr>
+<p><strong>-Xss</strong> 设置栈帧的深度，以K为单位</p>
+<p>可以通过减小栈帧深度，来人为的造成StackOverflowError。</p>
+<p>设置<strong>-Xss128K -XX:+PrintGCDetails</strong>参数来运行下面的代码</p>
+<p>public class Demo10 {<br>    private static int count = 0;<br>    public static void recursion(long a,long b,long c){<br>        long e=1,f=2,g=3,h=4,i=5,k=6,q=7,x=8,y=9,z=10;<br>        count++;<br>        recursion(a,b,c);<br>    }<br>    public static void main(String[] args) {<br>        try{<br>            recursion(0L,0L,0L);<br>        }catch (StackOverflowError e) {<br>            System.out.println(count);<br>            e.printStackTrace();<br>        }</p>
+<pre><code>}
+</code></pre><p>}</p>
+<p>GC日志：</p>
+<p>307<br>java.lang.StackOverflowError<br>    at cn.xiuyu.jvm.head.Demo10.recursion(Demo10.java:9)</p>
+<p>可以看到，递归调用了307次就抛出了StackOverflowError，<strong>如果把栈帧深度设置为256K，那么</strong></p>
+<p>762<br>java.lang.StackOverflowError<br>    at cn.xiuyu.jvm.head.Demo10.recursion(Demo10.java:9)</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="256.html" title="JVM系列（四）JVM配置参数">256.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JVM系列（四）JVM配置参数/" rel="tag"># JVM系列（四）JVM配置参数</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/26/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-89-ef-bc-89gc-e7-ae-97-e6-b3-95-gc-e6-94-b6-e9-9b-86-e5-99-a8/" rel="next" title="JVM系列（三）GC算法 GC收集器">
+                <i class="fa fa-chevron-left"></i> JVM系列（三）GC算法 GC收集器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-ba-94-ef-bc-89gc-e5-88-86-e6-9e-90/" rel="prev" title="JVM系列（五）GC分析">
+                JVM系列（五）GC分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://example.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Xmx-–Xms-指定最大堆-最小堆"><span class="nav-number">1.</span> <span class="nav-text">-Xmx –Xms 指定最大堆 最小堆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Xmn指定新生代大小"><span class="nav-number">2.</span> <span class="nav-text">Xmn指定新生代大小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#XX-SurvivorRatio"><span class="nav-number">3.</span> <span class="nav-text">-XX:SurvivorRatio</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#XX-NewRatio-1"><span class="nav-number">4.</span> <span class="nav-text">-XX:NewRatio=1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#XX-HeapDumpOnOutOfMemoryError"><span class="nav-number">5.</span> <span class="nav-text">-XX:+HeapDumpOnOutOfMemoryError</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#堆总结"><span class="nav-number">6.</span> <span class="nav-text">堆总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">XiuYu.Ge</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/';
+          this.page.identifier = '2017/05/31/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e5-9b-9b-ef-bc-89jvm-e9-85-8d-e7-bd-ae-e5-8f-82-e6-95-b0/';
+          this.page.title = 'JVM系列（四）JVM配置参数';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

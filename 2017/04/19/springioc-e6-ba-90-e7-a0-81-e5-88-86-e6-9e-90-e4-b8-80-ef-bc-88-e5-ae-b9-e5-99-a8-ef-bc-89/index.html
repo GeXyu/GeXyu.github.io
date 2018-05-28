@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Spring源码分析-IOC（一）容器," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="容器概述IoC也被称作依赖注入(DI)。它是一个处理对象依赖项的过程，也就是将他们一起工作的其他的对象，只有通过构造参数、工厂方法参数或者（属性注入）通过构造参数实例化或通过工厂方法返回对象后再设置属性。当创建bean后，IoC容器再将这些依赖项注入进去。这个过程基本上是反转的，因此得名控制反转（IoC）。 IoC容器利用Java的POJO类和配置元数据来生成 完全配置和可执行 的系统或应用程序。">
+<meta name="keywords" content="Spring源码分析-IOC（一）容器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring源码分析-IOC（一）容器">
+<meta property="og:url" content="http://www.zzcode.cn/2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="容器概述IoC也被称作依赖注入(DI)。它是一个处理对象依赖项的过程，也就是将他们一起工作的其他的对象，只有通过构造参数、工厂方法参数或者（属性注入）通过构造参数实例化或通过工厂方法返回对象后再设置属性。当创建bean后，IoC容器再将这些依赖项注入进去。这个过程基本上是反转的，因此得名控制反转（IoC）。 IoC容器利用Java的POJO类和配置元数据来生成 完全配置和可执行 的系统或应用程序。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/04/1-1.png">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/04/zz-2-300x114.png">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/04/20130711125429078.jpg">
+<meta property="og:updated_time" content="2018-05-28T01:43:38.802Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring源码分析-IOC（一）容器">
+<meta name="twitter:description" content="容器概述IoC也被称作依赖注入(DI)。它是一个处理对象依赖项的过程，也就是将他们一起工作的其他的对象，只有通过构造参数、工厂方法参数或者（属性注入）通过构造参数实例化或通过工厂方法返回对象后再设置属性。当创建bean后，IoC容器再将这些依赖项注入进去。这个过程基本上是反转的，因此得名控制反转（IoC）。 IoC容器利用Java的POJO类和配置元数据来生成 完全配置和可执行 的系统或应用程序。">
+<meta name="twitter:image" content="http://www.zzcode.cn/wp-content/uploads/2017/04/1-1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/"/>
+
+
+
+
+
+  <title>Spring源码分析-IOC（一）容器 | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring源码分析-IOC（一）容器</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-19T11:02:21+08:00">
+                2017-04-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Spring源码分析-IOC（一）容器/" itemprop="url" rel="index">
+                    <span itemprop="name">Spring源码分析-IOC（一）容器</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/" class="leancloud_visitors" data-flag-title="Spring源码分析-IOC（一）容器">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="容器概述"><a href="#容器概述" class="headerlink" title="容器概述"></a><strong>容器概述</strong></h2><pre><code>IoC也被称作依赖注入(DI)。它是一个处理对象依赖项的过程，也就是将他们一起工作的其他的对象，只有通过构造参数、工厂方法参数或者（属性注入）通过构造参数实例化或通过工厂方法返回对象后再设置属性。当创建bean后，IoC容器再将这些依赖项注入进去。这个过程基本上是反转的，因此得名控制反转（IoC）。
+</code></pre><p><strong>IoC容器利用Java的POJO类和配置元数据来生成 完全配置和可执行 的系统或应用程序。而Bean在Spring中就是POJO，也可以认为Bean就是对象。</strong></p>
+<h2 id="接口设计"><a href="#接口设计" class="headerlink" title="接口设计"></a><strong>接口设计</strong></h2><p><img src="http://www.zzcode.cn/wp-content/uploads/2017/04/1-1.png" alt="1"></p>
+<p>这里主要是接口体系，而具体实现体系，比如DefaultListableBeanFactory就是为了实现ConfigurableBeanFactory，从而成为一个简单Ioc容器实现。与其他Ioc容器类似，XmlBeanFactory就是为了实现BeanFactory，但都是基于DefaultListableBeanFactory的基础做了扩展。同样的，ApplicationContext也一样。        </p>
+<pre><code>从图中我们可以简要的做出以下分析：
+
+    1.从接口BeanFactory到HierarchicalBeanFactory，再到ConfigurableBeanFactory,这是一条主要的BeanFactory设计路径。在这条接口设计路径中，BeanFactory，是一条主要的BeanFactory设计路径。在这条接口设计路径中，BeanFactory接口定义了基本的Ioc容器的规范。在这个接口定义中，包括了getBean()这样的Ioc容器的基本方法（通过这个方法可以从容器中取得Bean）。而HierarchicalBeanFactory接口在继承了BeanFactory的基本接口后，增加了getParentBeanFactory()的接口功能，使BeanFactory具备了双亲Ioc容器的管理功能。在接下来的ConfigurableBeanFactory接口中，主要定义了一些对BeanFactory的配置功能，比如通过setParentBeanFactory()设置双亲Ioc容器，通过addBeanPostProcessor()配置Bean后置处理器，等等。通过这些接口设计的叠加，定义了BeanFactory就是最简单的Ioc容器的基本功能。
+
+    2.第二条接口设计主线是，以ApplicationContext作为核心的接口设计，这里涉及的主要接口设计有，从BeanFactory到ListableBeanFactory，再到ApplicationContext，再到我们常用的WebApplicationContext或者ConfigurableApplicationContext接口。我们常用的应用基本都是org.framework.context 包里的WebApplicationContext或者ConfigurableApplicationContext实现。在这个接口体现中，ListableBeanFactory和HierarchicalBeanFactory两个接口，连接BeanFactory接口定义和ApplicationContext应用的接口定义。在ListableBeanFactory接口中，细化了许多BeanFactory的接口功能，比如定义了getBeanDefinitionNames()接口方法；对于ApplicationContext接口，它通过继承MessageSource、ResourceLoader、ApplicationEventPublisher接口，在BeanFactory简单Ioc容器的基础上添加了许多对高级容器的特性支持。
+
+    3.这个接口系统是以BeanFactory和ApplicationContext为核心设计的，而BeanFactory是Ioc容器中最基本的接口，在ApplicationContext的设计中，一方面，可以看到它继承了BeanFactory接口体系中的ListableBeanFactory、AutowireCapableBeanFactory、HierarchicalBeanFactory等BeanFactory的接口，具备了BeanFactory Ioc容器的基本功能；另一方面，通过继承MessageSource、ResourceLoadr、ApplicationEventPublisher这些接口，BeanFactory为ApplicationContext赋予了更高级的Ioc容器特性。对于ApplicationContext而言，为了在Web环境中使用它，还设计了WebApplicationContext接口，而这个接口通过继承ThemeSource接口来扩充功能。
+</code></pre><h2 id="BeanFactory的接口体系"><a href="#BeanFactory的接口体系" class="headerlink" title=" BeanFactory的接口体系"></a><strong> BeanFactory的接口体系</strong></h2><h3 id="最原始的容器：BeanFactory"><a href="#最原始的容器：BeanFactory" class="headerlink" title="最原始的容器：BeanFactory"></a><strong>最原始的容器：BeanFactory</strong></h3><p>package org.springframework.beans.factory;</p>
+<p>import org.springframework.beans.BeansException;<br>import org.springframework.core.ResolvableType;</p>
+<p>/**<br> * BeanFactory作为最原始同时也最重要的Ioc容器,它主要的功能是为依赖注入 （DI） 提供支持， BeanFactory 和相关的接口，比如，BeanFactoryAware、<br> * DisposableBean、InitializingBean，仍旧保留在 Spring 中，主要目的是向后兼容已经存在的和那些 Spring 整合在一起的第三方框架。在 Spring 中<br> * ，有大量对 BeanFactory 接口的实现。其中，最常被使用的是 XmlBeanFactory 类。这个容器从一个 XML 文件中读取配置元数据，由这些元数据来生成一<br> * 个被配置化的系统或者应用。在资源宝贵的移动设备或者基于applet的应用当中， BeanFactory 会被优先选择。否则，一般使用的是 ApplicationContext<br> *<br> * 这里定义的只是一系列的接口方法，通过这一系列的BeanFactory接口，可以使用不同的Bean的检索方法很方便地从Ioc容器中得到需要的Bean，从而忽略具体<br> * 的Ioc容器的实现，从这个角度上看，这些检索方法代表的是最为基本的容器入口。<br> *<br> * @author Rod Johnson<br> * @author Juergen Hoeller<br> * @author Chris Beams<br> * @since 13 April 2001<br> */<br>public interface BeanFactory {</p>
+<pre><code>/\*\*
+ \* 转定义符&quot;&amp;&quot; 用来引用实例，或把它和工厂产生的Bean区分开，就是说，如果一个FactoryBean的名字为a，那么，&amp;a会得到那个Factory
+ \*
+ \* FactoryBean和BeanFactory 是在Spring中使用最为频繁的类，它们在拼写上很相似。一个是Factory，也就是Ioc容器或对象工厂；一个
+ \* 是Bean。在Spring中，所有的Bean都是由BeanFactory（也就是Ioc容器）来进行管理的。但对FactoryBean而言，这个Bean不是简单的Be
+ \* an，而是一个能产生或者修饰对象生成的工厂Bean，它的实现与设计模式中的工厂模式和修饰器模式类似。
+ */
+String FACTORY\_BEAN\_PREFIX = &quot;&amp;&quot;;
+
+/\*\*
+ \* 五个不同形式的getBean方法，获取实例
+ \* @param name 检索所用的Bean名
+ \* @return Object（&lt;T&gt; T） 实例对象
+ \* @throws BeansException 如果Bean不能取得
+ */
+Object getBean(String name) throws BeansException;
+&lt;T&gt; T getBean(String name, Class&lt;T&gt; requiredType) throws BeansException;
+&lt;T&gt; T getBean(Class&lt;T&gt; requiredType) throws BeansException;
+Object getBean(String name, Object... args) throws BeansException;
+&lt;T&gt; T getBean(Class&lt;T&gt; requiredType, Object... args) throws BeansException;
+
+/\*\*
+ \* 让用户判断容器是否含有指定名字的Bean.
+ \* @param name 搜索所用的Bean名
+ \* @return boolean 是否包含其中
+ */
+boolean containsBean(String name);
+
+/\*\*
+ \* 查询指定名字的Bean是否是Singleton类型的Bean.
+ \* 对于Singleton属性，可以在BeanDefinition指定.
+ \* @param name 搜索所用的Bean名
+ \* @return boolean 是否包是Singleton
+ \* @throws NoSuchBeanDefinitionException 没有找到Bean
+ */
+boolean isSingleton(String name) throws NoSuchBeanDefinitionException;
+
+/\*\*
+ \* 查询指定名字的Bean是否是Prototype类型的。
+ \* 与Singleton属性一样，可以在BeanDefinition指定.
+ \* @param name 搜索所用的Bean名
+ \* @return boolean 是否包是Prototype
+ \* @throws NoSuchBeanDefinitionException 没有找到Bean
+ */
+boolean isPrototype(String name) throws NoSuchBeanDefinitionException;
+
+/\*\*
+ \* 查询指定了名字的Bean的Class类型是否是特定的Class类型.
+ \* @param name 搜索所用的Bean名
+ \* @param typeToMatch 匹配类型
+ \* @return boolean 是否是特定类型
+ \* @throws NoSuchBeanDefinitionException 没有找到Bean
+ */
+boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException;
+boolean isTypeMatch(String name, Class&lt;?&gt; typeToMatch) throws NoSuchBeanDefinitionException;
+
+/\*\*
+ \* 查询指定名字的Bean的Class类型.
+ \* @param name 搜索所用的Bean名
+ \* @return 指定的Bean或者null(没有找到合适的Bean)
+ \* @throws NoSuchBeanDefinitionException 没有找到Bean
+ */
+Class&lt;?&gt; getType(String name) throws NoSuchBeanDefinitionException;
+
+/\*\*
+ \* 查询指定了名字的Bean的所有别名，这些都是在BeanDefinition中定义的
+ \* @param name 搜索所用的Bean名
+ \* @return 指定名字的Bean的所有别名 或者一个空的数组
+ */
+String\[\] getAliases(String name);
+</code></pre><p>}</p>
+<h3 id="容器的基础：XmlBeanFactory"><a href="#容器的基础：XmlBeanFactory" class="headerlink" title="容器的基础：XmlBeanFactory"></a><strong>容器的基础：XmlBeanFactory</strong></h3><p>package org.springframework.beans.factory.xml;</p>
+<p>import org.springframework.beans.BeansException;<br>import org.springframework.beans.factory.BeanFactory;<br>import org.springframework.beans.factory.support.DefaultListableBeanFactory;<br>import org.springframework.core.io.Resource;</p>
+<p>/**<br> * XmlBeanFactory是BeanFactory的最简单实现类<br> *<br> * XmlBeanFactory的功能是建立在DefaultListableBeanFactory这个基本容器的基础上的，并在这个基本容器的基础上实行了其他诸如<br> * XML读取的附加功能。XmlBeanFactory使用了DefaultListableBeanFactory作为基础类，DefaultListableBeanFactory是一个很重<br> * 要的Ioc实现，会在下一章进行重点论述。<br> *<br> * @author Rod Johnson<br> * @author Juergen Hoeller<br> * @author Chris Beams<br> * @since 15 April 2001<br> */<br>public class XmlBeanFactory extends DefaultListableBeanFactory {</p>
+<pre><code>private final XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(this);
+
+/\*\*
+ \* 根据给定来源，创建一个XmlBeanFactory
+ \* @param resource  Spring中对与外部资源的抽象，最常见的是对文件的抽象，特别是XML文件。而且Resource里面通常
+ \* 是保存了Spring使用者的Bean定义，比如applicationContext.xml在被加载时，就会被抽象为Resource来处理。
+ \* @throws BeansException 载入或者解析中发生错误
+ */
+public XmlBeanFactory(Resource resource) throws BeansException {
+    this(resource, null);
+}
+
+/\*\*
+ \* 根据给定来源和BeanFactory，创建一个XmlBeanFactory
+ \* @param resource  Spring中对与外部资源的抽象，最常见的是对文件的抽象，特别是XML文件。而且Resource里面通常
+ \* 是保存了Spring使用者的Bean定义，比如applicationContext.xml在被加载时，就会被抽象为Resource来处理。
+ \* @param parentBeanFactory 父类的BeanFactory
+ \* @throws BeansException 载入或者解析中发生错误
+ */
+public XmlBeanFactory(Resource resource, BeanFactory parentBeanFactory) throws BeansException {
+    super(parentBeanFactory);
+    this.reader.loadBeanDefinitions(resource);
+}
+</code></pre><p>}</p>
+<p>在XmlBeanFactory中实例化了一个XmlBeanDefinitionReader，这个Reader对象就是用来处理以xml形式的持有类信息的<strong><strong>BeanDefinitionl</strong></strong>类。在XmlBeanFactory这个容器中还需要<strong><strong>BeanDefinitionl</strong></strong>信息，这些信息被封装成<strong>Resource</strong>，然后把<strong>Resource</strong>传递给构造方法，然后再使用XmlBeanDefinitionReader进行处理，完成容器的初始化和注入。</p>
+<p>下图是<strong>XmlBeanFactory</strong>的继承关系 </p>
+<p><img src="http://www.zzcode.cn/wp-content/uploads/2017/04/zz-2-300x114.png" alt="zz"></p>
+<p>作为简单ioc容器系列最底层的实现XmlBeanFactory是建立在defaultListableBeanFactory容器的基础之上的，并在这个基本容器的基础上实现了其他诸如xml读取的附加功能。</p>
+<h2 id="Resource-的接口体系"><a href="#Resource-的接口体系" class="headerlink" title="Resource**的接口体系**"></a><strong>Resource**</strong>的接口体系**</h2><p><img src="http://www.zzcode.cn/wp-content/uploads/2017/04/20130711125429078.jpg" alt="20130711125429078"></p>
+<p>资源的原始接口为Resource，它继承自InputStreamResource，实现了其getInstream方法，这样所有的资源就是通过该方法来获取输入流的。对于资源的加载，也实现了统一，定义了一个资源加载顶级接口ResourceLoader，它默认的加载就是DefaultResourceLoader。</p>
+<h3 id="InputStreamSource接口"><a href="#InputStreamSource接口" class="headerlink" title="InputStreamSource接口"></a><strong>InputStreamSource接口</strong></h3><p>package org.springframework.core.io;</p>
+<p>import java.io.IOException;<br>import java.io.InputStream;</p>
+<p>/**<br> * InputStreamSource 封装任何能返回InputStream的类，比如File、Classpath下的资源和Byte Array等<br> *<br> * @author Juergen Hoeller<br> * @since 20.01.2004<br> */<br>public interface InputStreamSource {</p>
+<pre><code>/\*\*
+ \* 返回InputStream的类，比如File、Classpath下的资源和Byte Array等
+ \* @return InputStream 返回一个新的InputStream的对象
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+InputStream getInputStream() throws IOException;
+</code></pre><p>}</p>
+<h3 id="Resource接口"><a href="#Resource接口" class="headerlink" title="Resource接口"></a><strong>Resource接口</strong></h3><p>package org.springframework.core.io;</p>
+<p>import java.io.File;<br>import java.io.IOException;<br>import java.net.URI;<br>import java.net.URL;</p>
+<p>/**<br> * Resource接口抽象了所有Spring内部使用到的底层资源：File、URL、Classpath等。<br> * 同时，对于来源不同的资源文件，Resource也有不同实现：文件(FileSystemResource)、Classpath资源(ClassPathResource)、<br> * URL资源(UrlResource)、InputStream资源(InputStreamResource)、Byte数组(ByteArrayResource)等等。<br> *<br> * @author Juergen Hoeller<br> * @since 28.12.2003<br> */<br>public interface Resource extends InputStreamSource {</p>
+<pre><code>/\*\*
+ \* 判断资源是否存在
+ \* @return boolean 是否存在
+ */
+boolean exists();
+
+/\*\*
+ \* 判断资源是否可读
+ \* @return boolean 是否可读
+ */
+boolean isReadable();
+
+/\*\*
+ \* 是否处于开启状态
+ \* @return boolean 是否开启
+ */
+boolean isOpen();
+
+/\*\*
+ \* 得到URL类型资源，用于资源转换
+ \* @return URL 得到URL类型
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+URL getURL() throws IOException;
+
+/\*\*
+ \* 得到URI类型资源，用于资源转换
+ \* @return URI 得到URI类型
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+URI getURI() throws IOException;
+
+/\*\*
+ \* 得到File类型资源，用于资源转换
+ \* @return File 得到File类型
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+File getFile() throws IOException;
+
+/\*\*
+ \* 获取资源长度
+ \* @return long 资源长度
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+long contentLength() throws IOException;
+
+/\*\*
+ \* 获取lastModified属性
+ \* @return long 获取lastModified
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+long lastModified() throws IOException;
+
+/\*\*
+ \* 创建一个相对的资源方法
+ \* @param relativePath 相对路径
+ \* @return Resource 返回一个新的资源
+ \* @throws IOException 如果资源不能打开则抛出异常
+ */
+Resource createRelative(String relativePath) throws IOException;
+
+/\*\*
+ \* 获取文件名称
+ \* @return String 文件名称或者null
+ */
+String getFilename();
+
+/\*\*
+ \* 得到错误处理信息，主要用于错误处理的信息打印
+ \* @return String 错误资源信息
+ */
+String getDescription();
+</code></pre><p>}</p>
+<p>根据上面的推论，我们可以理解为这两段代码，在某种程度来说是完全等效的</p>
+<pre><code>ClassPathResource resource = new ClassPathResource(&quot;applicationContext.xml&quot;);
+InputStream inputStream = resource.getInputStream();
+
+Resource resource = new ClassPathResource(&quot;applicationContext.xml&quot;);
+InputStream inputStream = resource.getInputStream();
+</code></pre><p>这样得到InputStream以后，我们可以拿来用了。值得一提是，不同的实现有不同的调用方法，这里就不展开了。</p>
+<h2 id="编程式使用Ioc容器"><a href="#编程式使用Ioc容器" class="headerlink" title="编程式使用Ioc容器"></a><strong>编程式使用Ioc容器</strong></h2><p>说完了BeanFactory和resource体系，可以看到XmlBeanFactory使用DefaultListableBeanFactory作为基类，DefaultListableBeanFactory也是一个很重要的ioc容器，在其他的ioc容器中，譬如ApplicationContext的实现和XmlBeanFactory实现是类似的。编程式的使用DefaultListableBeanFactory可以了解容器的基本过程，还可以看一下几个关键类（resource，DefaultListableBeanFactory，XmlBeanDefinitionReader）之间的关系，如何分离解耦又如何结合为ioc容器服务</p>
+<p>public class ProgramBeanFactory{<br>    public static void main(String[] args) {<br>        ClassPathResource resource = new ClassPathResource(“applicationContext.xml”);<br>        DefaultListableBeanFactory factory = new DefaultListableBeanFactory();<br>        XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);<br>        reader.loadBeanDefinitions(resource);<br>        Message message = factory.getBean(“message”, Message.class);    //Message是自己写的测试类<br>        message.printMessage();<br>    }<br>}</p>
+<p> 以上，可以简单说明我们在使用Ioc容器时，需要如下几个步骤：</p>
+<pre><code>1，创建Ioc配置文件的抽象资源，这个抽象资源包含了BeanDefinition的定义信息。
+
+2，创建一个BeanFactory，这里使用了DefaultListableBeanFactory。
+
+3，创建一个载入BeanDefinition的读取器，这里使用XmlBeanDefinitionReader来载入XML文件形式的BeanDefinition，通过一个回调配置给BeanFactory。
+
+4，从定义好的资源位置读入配置信息，具体的解析过程由XmlBeanDefinitionReader来完成。完成整个载入和注册Bean定义之后，需要的Ioc容器就建立起来了。这个时候我们就可以直接使用Ioc容器了。
+</code></pre>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="39.html" title="Spring源码分析-IOC（一）容器">39.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spring源码分析-IOC（一）容器/" rel="tag"># Spring源码分析-IOC（一）容器</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/20/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90/" rel="prev" title="Spring源码分析-IOC（二）入门">
+                Spring源码分析-IOC（二）入门 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://example.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#容器概述"><span class="nav-number">1.</span> <span class="nav-text">容器概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#接口设计"><span class="nav-number">2.</span> <span class="nav-text">接口设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BeanFactory的接口体系"><span class="nav-number">3.</span> <span class="nav-text"> BeanFactory的接口体系</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#最原始的容器：BeanFactory"><span class="nav-number">3.1.</span> <span class="nav-text">最原始的容器：BeanFactory</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#容器的基础：XmlBeanFactory"><span class="nav-number">3.2.</span> <span class="nav-text">容器的基础：XmlBeanFactory</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Resource-的接口体系"><span class="nav-number">4.</span> <span class="nav-text">Resource**的接口体系**</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#InputStreamSource接口"><span class="nav-number">4.1.</span> <span class="nav-text">InputStreamSource接口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Resource接口"><span class="nav-number">4.2.</span> <span class="nav-text">Resource接口</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编程式使用Ioc容器"><span class="nav-number">5.</span> <span class="nav-text">编程式使用Ioc容器</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">XiuYu.Ge</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/';
+          this.page.identifier = '2017/04/19/springioc-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e4-b8-80-ef-bc-88-e5-ae-b9-e5-99-a8-ef-bc-89/';
+          this.page.title = 'Spring源码分析-IOC（一）容器';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

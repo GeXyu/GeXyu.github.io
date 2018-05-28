@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Spring源码分析-AOP（三）XML解析," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上文在ico容器初始化时，注册了一个AspectJAwareAdvisorAutoProxyCreator类，也提到了容器初始化时解析aop:config标签会用AopNamespaceHandler调用ConfigBeanDefinitionParser的Parser方法。    @Override    public BeanDefinition parse(Element element,">
+<meta name="keywords" content="Spring源码分析-AOP（三）XML解析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring源码分析-AOP（三）XML解析">
+<meta property="og:url" content="http://www.zzcode.cn/2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="上文在ico容器初始化时，注册了一个AspectJAwareAdvisorAutoProxyCreator类，也提到了容器初始化时解析aop:config标签会用AopNamespaceHandler调用ConfigBeanDefinitionParser的Parser方法。    @Override    public BeanDefinition parse(Element element,">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-28T01:43:38.804Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring源码分析-AOP（三）XML解析">
+<meta name="twitter:description" content="上文在ico容器初始化时，注册了一个AspectJAwareAdvisorAutoProxyCreator类，也提到了容器初始化时解析aop:config标签会用AopNamespaceHandler调用ConfigBeanDefinitionParser的Parser方法。    @Override    public BeanDefinition parse(Element element,">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/"/>
+
+
+
+
+
+  <title>Spring源码分析-AOP（三）XML解析 | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring源码分析-AOP（三）XML解析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-26T15:09:28+08:00">
+                2017-04-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Spring源码分析-AOP（三）XML解析/" itemprop="url" rel="index">
+                    <span itemprop="name">Spring源码分析-AOP（三）XML解析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/" class="leancloud_visitors" data-flag-title="Spring源码分析-AOP（三）XML解析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上文在ico容器初始化时，注册了一个AspectJAwareAdvisorAutoProxyCreator类，也提到了容器初始化时解析<a href="aop:config" target="_blank" rel="noopener">aop:config</a>标签会用AopNamespaceHandler调用ConfigBeanDefinitionParser的Parser方法。</p>
+<p>   @Override<br>    public BeanDefinition parse(Element element, ParserContext parserContext) {<br>        CompositeComponentDefinition compositeDef =<br>                new CompositeComponentDefinition(element.getTagName(), parserContext.extractSource(element));<br>        parserContext.pushContainingComponent(compositeDef);</p>
+<pre><code>    // 创建AOP自动代理创建器
+    configureAutoProxyCreator(parserContext, element);
+
+    //遍历并解析&lt;aop:config&gt;的子标签
+    List&lt;Element&gt; childElts = DomUtils.getChildElements(element);
+    for (Element elt: childElts) {
+        String localName = parserContext.getDelegate().getLocalName(elt);
+        if (&quot;pointcut&quot;.equals(localName)) {
+            // 解析&lt;aop:pointcut&gt;标签
+            parsePointcut(elt, parserContext);
+        } else if (&quot;advisor&quot;.equals(localName)) {
+            // 解析&lt;aop:advisor&gt;标签
+            parseAdvisor(elt, parserContext);
+        } else if (&quot;aspect&quot;.equals(localName)) {
+            // 解析&lt;aop:aspect&gt;标签
+            parseAspect(elt, parserContext);
+        }
+    }
+
+    parserContext.popAndRegisterContainingComponent();
+    return null;
+}
+</code></pre><p>parse方法首先调用解析器ConfigBeanDefinitionParser的configureAutoProxyCreator方法来向容器中注册一个自动代理构建器AspectJAwareAdvisorAutoProxyCreator对象，然后调用parsePointcut方法解析<a href="aop:pointcut" target="_blank" rel="noopener">aop:pointcut</a>标签，调用parseAdvisor方法解析<a href="aop:advisor" target="_blank" rel="noopener">aop:advisor</a>标签，调用parseAspect方法解析<a href="aop:aspect" target="_blank" rel="noopener">aop:aspect</a>标签。</p>
+<h3 id="解析aop-config属性"><a href="#解析aop-config属性" class="headerlink" title="解析aop:config属性"></a><strong>解析<a href="aop:config" target="_blank" rel="noopener">aop:config</a>属性</strong></h3><p>想容器注册了AspectJAwareAdvisorAutoProxyCreator对象之后，接着调用AopNamespaceUtils中useClassProxyingIfNecessary方法来解析<a href="aop:config" target="_blank" rel="noopener">aop:config</a>的两个属性。</p>
+<p>private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, Element sourceElement) {<br>        if (sourceElement != null) {<br>             // 解析proxy-target-class属性<br>            boolean proxyTargetClass = Boolean.valueOf(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));<br>            if (proxyTargetClass) {<br>                AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);<br>            }<br>            // 解析expose-proxy属性<br>            boolean exposeProxy = Boolean.valueOf(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));<br>            if (exposeProxy) {<br>                AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);<br>            }<br>        }<br>    }</p>
+<p>在是对两个属性的处理</p>
+<p>public static final String AUTO_PROXY_CREATOR_BEAN_NAME =<br>            “org.springframework.aop.config.internalAutoProxyCreator”;<br>public static void forceAutoProxyCreatorToUseClassProxying(BeanDefinitionRegistry registry) {<br>        if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {<br>            BeanDefinition definition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);<br>            definition.getPropertyValues().add(“proxyTargetClass”, Boolean.TRUE);<br>        }<br>    }</p>
+<pre><code>public static void forceAutoProxyCreatorToExposeProxy(BeanDefinitionRegistry registry) {
+    if (registry.containsBeanDefinition(AUTO\_PROXY\_CREATOR\_BEAN\_NAME)) {
+        BeanDefinition definition = registry.getBeanDefinition(AUTO\_PROXY\_CREATOR\_BEAN\_NAME);
+        definition.getPropertyValues().add(&quot;exposeProxy&quot;, Boolean.TRUE);
+    }
+}
+</code></pre><h3 id="解析aop-pointcut标签"><a href="#解析aop-pointcut标签" class="headerlink" title="解析aop:pointcut标签"></a><strong>解析<a href="aop:pointcut" target="_blank" rel="noopener">aop:pointcut</a>标签</strong></h3><p>回到ConfigBeanDefinitionParser的Parser方法，他会调用parsePointcut方法解析<a href="aop:pointcut" target="_blank" rel="noopener">aop:pointcut</a>标签。</p>
+<p>private AbstractBeanDefinition parsePointcut(Element pointcutElement, ParserContext parserContext) {<br>        // 获取id属性值<br>        String id = pointcutElement.getAttribute(“id”);<br>        // 获取expression属性值<br>        String expression = pointcutElement.getAttribute(“expression”);</p>
+<pre><code>    AbstractBeanDefinition pointcutDefinition = null;
+
+    try {
+        this.parseState.push(new PointcutEntry(id));
+        //根据切点表达式来创建一个Pointcut对象的BeanDefinition
+        pointcutDefinition = createPointcutDefinition(expression);
+        pointcutDefinition.setSource(parserContext.extractSource(pointcutElement));
+
+        String pointcutBeanName = id;
+        if (StringUtils.hasText(pointcutBeanName)) {
+            //id属性值不为空时，使用id值为Pointcut的bean名称然后注册到容器中
+            parserContext.getRegistry().registerBeanDefinition(pointcutBeanName, pointcutDefinition);
+        } else {
+            //id属性值为空时，使用bean名称生成器来为Pointcut创建bean名称然后注册到容器中
+            pointcutBeanName = parserContext.getReaderContext().registerWithGeneratedName(pointcutDefinition);
+        }
+
+        parserContext.registerComponent(
+                new PointcutComponentDefinition(pointcutBeanName, pointcutDefinition, expression));
+    } finally {
+        this.parseState.pop();
+    }
+
+    return pointcutDefinition;
+}
+</code></pre><p>我们看一下createPointcutDefinition方法创建了什么？</p>
+<p> protected AbstractBeanDefinition createPointcutDefinition(String expression) {<br>        RootBeanDefinition beanDefinition = new RootBeanDefinition(AspectJExpressionPointcut.class);<br>        //创建AspectJExpressionPointcut对象，域为SCOPE_PROTOTYPE<br>        beanDefinition.setScope(BeanDefinition.SCOPE_PROTOTYPE);<br>        beanDefinition.setSynthetic(true);<br>        beanDefinition.getPropertyValues().add(“expression”, expression);<br>        return beanDefinition;<br>    }</p>
+<p>从上面可以看到他创建了一个AspectJExpressionPointcut对象，域为SCOPE_PROTOTYPE。</p>
+<h3 id="解析aop-advisor标签"><a href="#解析aop-advisor标签" class="headerlink" title=" 解析aop:advisor标签"></a><strong> 解析<a href="aop:advisor" target="_blank" rel="noopener">aop:advisor</a>标签</strong></h3><p>继续回到ConfigBeanDefinitionParser类的parse方法，看他如何解析<a href="aop:advisor" target="_blank" rel="noopener">aop:advisor</a>标签</p>
+<p>private void parseAdvisor(Element advisorElement, ParserContext parserContext) {</p>
+<pre><code>    //创建一个Advisor对象对应的BeanDefintion对象
+    AbstractBeanDefinition advisorDef = createAdvisorBeanDefinition(advisorElement, parserContext);
+    //获取id属性值
+    String id = advisorElement.getAttribute(ID);
+
+    try {
+        this.parseState.push(new AdvisorEntry(id));
+        String advisorBeanName = id;
+        if (StringUtils.hasText(advisorBeanName)) {
+            //id属性值不为空时，使用id值为Advisor的bean名称，并注册到容器中
+            parserContext.getRegistry().registerBeanDefinition(advisorBeanName, advisorDef);
+        } else {
+            //id属性值为空时，使用bean名称生成器来为Advisor创建bean名称，并注册到容器中
+            advisorBeanName = parserContext.getReaderContext().registerWithGeneratedName(advisorDef);
+        }
+
+        //获取Advisor的Pointcut
+        //解析pointcut和poincut-ref属性
+        Object pointcut = parsePointcutProperty(advisorElement, parserContext);
+        if (pointcut instanceof BeanDefinition) {
+            //获取的是一个根据pointcut属性所指定的切点表达式来创建的的一个Poincut bean
+            advisorDef.getPropertyValues().add(&quot;pointcut&quot;, pointcut);
+            parserContext.registerComponent(
+                    new AdvisorComponentDefinition(advisorBeanName, advisorDef, (BeanDefinition) pointcut));
+        } else if (pointcut instanceof String) {
+            //获取的是pointcut-ref属性值指向的一个Pointcut bean。
+            advisorDef.getPropertyValues().add(&quot;pointcut&quot;, new RuntimeBeanReference((String) pointcut));
+            parserContext.registerComponent(
+                    new AdvisorComponentDefinition(advisorBeanName, advisorDef));
+        }
+    } finally {
+        this.parseState.pop();
+    }
+}
+</code></pre><p>其实这个parseAdvisor方法就干两件事：</p>
+<p>一：通过调用createAdvisorBeanDefinition方法创建并注册了Advisor对象对应的BeanDefintion对象。</p>
+<p>二：通过调用parsePointcutProperty方法解析通过pointcut或者pointcut-ref属性获取Advisor的Pointcut</p>
+<h4 id="createAdvisorBeanDefinition方法"><a href="#createAdvisorBeanDefinition方法" class="headerlink" title="createAdvisorBeanDefinition方法"></a><strong>createAdvisorBeanDefinition方法</strong></h4><p> private AbstractBeanDefinition createAdvisorBeanDefinition(Element advisorElement, ParserContext parserContext) {</p>
+<pre><code>    // 指定向容器中注入DefaultBeanFactoryPointcutAdvisor对象作为Advisor
+    RootBeanDefinition advisorDefinition = new RootBeanDefinition(DefaultBeanFactoryPointcutAdvisor.class);
+    advisorDefinition.setSource(parserContext.extractSource(advisorElement));
+
+    // 指定Advisor的Advice对象
+    // 获取advice-ref属性值
+    String adviceRef = advisorElement.getAttribute(&quot;advice-ref&quot;);
+    if (!StringUtils.hasText(adviceRef)) {
+        parserContext.getReaderContext().error(
+                &quot;&apos;advice-ref&apos; attribute contains empty value.&quot;, advisorElement, this.parseState.snapshot());
+    }
+    else {
+        advisorDefinition.getPropertyValues().add(
+                &quot;adviceBeanName&quot;, new RuntimeBeanNameReference(adviceRef));
+    }
+
+    // 获取order值，用于指定Advise的执行顺序
+    if (advisorElement.hasAttribute(&quot;order&quot;)) {
+        advisorDefinition.getPropertyValues().add(
+                &quot;order&quot;, advisorElement.getAttribute(&quot;order&quot;));
+    }
+
+    return advisorDefinition;
+}
+</code></pre><p>可以从上面的代码看到createAdvisorBeanDefinition方法不仅创建了Advisor有关的BeanDefinitiion对象，还获取了order和adice-ref属性来设置Advisor的相应属性。</p>
+<h4 id="parsePointcutProperty方法"><a href="#parsePointcutProperty方法" class="headerlink" title="parsePointcutProperty方法"></a><strong>parsePointcutProperty方法</strong></h4><p>private Object parsePointcutProperty(Element element, ParserContext parserContext) {<br>        // poincut和pointcut-ref属性不能同时定义<br>        if (element.hasAttribute(“pointcut”) &amp;&amp; element.hasAttribute(“pointcut-ref”)) {<br>            parserContext.getReaderContext().error(<br>                    “Cannot define both ‘pointcut’ and ‘pointcut-ref’ on <advisor> tag.”,<br>                    element, this.parseState.snapshot());<br>            return null;<br>        } else if (element.hasAttribute(“pointcut”)) {<br>            String expression = element.getAttribute(“pointcut”);<br>            // 根据切点表达式来创建一个Pointcut的BeanDefinition对象<br>            AbstractBeanDefinition pointcutDefinition = createPointcutDefinition(expression);<br>            pointcutDefinition.setSource(parserContext.extractSource(element));<br>            return pointcutDefinition;<br>        } else if (element.hasAttribute(“pointcut-ref”)) {<br>            // 获取pointcut-ref属性值并返回<br>            String pointcutRef = element.getAttribute(“pointcut-ref”);<br>            if (!StringUtils.hasText(pointcutRef)) {<br>                parserContext.getReaderContext().error(<br>                        “‘pointcut-ref’ attribute contains empty value.”, element, this.parseState.snapshot());<br>                return null;<br>            }<br>            return pointcutRef;<br>        } else {<br>            parserContext.getReaderContext().error(<br>                    “Must define one of ‘pointcut’ or ‘pointcut-ref’ on <advisor> tag.”,<br>                    element, this.parseState.snapshot());<br>            return null;<br>        }<br>    }</advisor></advisor></p>
+<p><a href="aop:advisor" target="_blank" rel="noopener">aop:advisor</a>有id、advice-ref、order、pointcut和pointcut-ref共5个属性，其中前三个属性只需要简单获取属性值就可以了，而这段代码的作用就是用来解析pointcut和pointcut-ref属性。</p>
+<h3 id="解析aop-aspect标签"><a href="#解析aop-aspect标签" class="headerlink" title=" 解析aop:aspect标签"></a><strong> 解析<a href="aop:aspect" target="_blank" rel="noopener">aop:aspect</a>标签</strong></h3><p>ConfigBeanDefinitionParser解析器调用它的parseAspect方法解析<a href="aop:aspect" target="_blank" rel="noopener">aop:aspect</a>标签</p>
+<p>private void parseAspect(Element aspectElement, ParserContext parserContext) {<br>        // 获取id属性值<br>        String aspectId = aspectElement.getAttribute(“id”);<br>        // 获取ref属性值<br>        String aspectName = aspectElement.getAttribute(“ref”);</p>
+<pre><code>    try {
+        this.parseState.push(new AspectEntry(aspectId, aspectName));
+        List&lt;BeanDefinition&gt; beanDefinitions = new ArrayList&lt;BeanDefinition&gt;();
+        List&lt;BeanReference&gt; beanReferences = new ArrayList&lt;BeanReference&gt;();
+
+        List&lt;Element&gt; declareParents = DomUtils.getChildElementsByTagName(aspectElement, &quot;declare-parents&quot;);
+        // 遍历并解析&lt;aop:declare-parents&gt;标签
+        // 定义有METHOD_INDEX=0
+        for (int i = METHOD_INDEX; i &lt; declareParents.size(); i++) {
+            Element declareParentsElement = declareParents.get(i);
+            // 解析&lt;aop:declare-parents&gt;标签
+            beanDefinitions.add(parseDeclareParents(declareParentsElement, parserContext));
+        }
+
+        // 遍历并解析before、after、after-returning、after-throwing和around标签
+        NodeList nodeList = aspectElement.getChildNodes();
+        boolean adviceFoundAlready = false;
+        for (int i = 0; i &lt; nodeList.getLength(); i++) {
+            Node node = nodeList.item(i);
+            // 判断当前
+            if (isAdviceNode(node, parserContext)) {
+                if (!adviceFoundAlready) {
+                    adviceFoundAlready = true;
+                    if (!StringUtils.hasText(aspectName)) {
+                        parserContext.getReaderContext().error(
+                                &quot;&lt;aspect&gt; tag needs aspect bean reference via &apos;ref&apos; attribute when declaring advices.&quot;,
+                                aspectElement, this.parseState.snapshot());
+                        return;
+                    }
+                    beanReferences.add(new RuntimeBeanReference(aspectName));
+                }
+                // 解析adice相关的标签，并创建和注册相应的BeanDefinition对象
+                AbstractBeanDefinition advisorDefinition = parseAdvice(
+                        aspectName, i, aspectElement, (Element) node, parserContext, beanDefinitions, beanReferences);
+                beanDefinitions.add(advisorDefinition);
+            }
+        }
+
+        AspectComponentDefinition aspectComponentDefinition = createAspectComponentDefinition(
+                aspectElement, aspectId, beanDefinitions, beanReferences, parserContext);
+        parserContext.pushContainingComponent(aspectComponentDefinition);
+
+        // 遍历并解析&lt;aop:pointcut&gt;标签
+        List&lt;Element&gt; pointcuts = DomUtils.getChildElementsByTagName(aspectElement, POINTCUT);
+        for (Element pointcutElement : pointcuts) {
+            parsePointcut(pointcutElement, parserContext);
+        }
+
+        parserContext.popAndRegisterContainingComponent();
+    } finally {
+        this.parseState.pop();
+    }
+}
+</code></pre><p>parseAspect方法解析aspect标签下的pointcut、declare-parents和5个advice标签，其中pointcut标签的解析已经在前面看过了，这里我们只需要看后面两种标签的解析。</p>
+<p>（1）解析<a href="aop:declare-parents" target="_blank" rel="noopener">aop:declare-parents</a>标签是会调用parseDeclareParents方法</p>
+<p>private AbstractBeanDefinition parseDeclareParents(Element declareParentsElement, ParserContext parserContext) {<br>        // 使用BeanDefinitionBuilder对象来构造一个BeanDefinition对象<br>        BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(DeclareParentsAdvisor.class);<br>        builder.addConstructorArgValue(declareParentsElement.getAttribute(“implement-interface”));<br>        builder.addConstructorArgValue(declareParentsElement.getAttribute(“types-matching”));</p>
+<pre><code>    String defaultImpl = declareParentsElement.getAttribute(&quot;default-impl&quot;);
+    String delegateRef = declareParentsElement.getAttribute(&quot;delegate-ref&quot;);
+
+    // default-impl和delegate-ref不能同时定义
+    if (StringUtils.hasText(defaultImpl) &amp;&amp; !StringUtils.hasText(delegateRef)) {
+        builder.addConstructorArgValue(defaultImpl);
+    } else if (StringUtils.hasText(delegateRef) &amp;&amp; !StringUtils.hasText(defaultImpl)) {
+        builder.addConstructorArgReference(delegateRef);
+    } else {
+        parserContext.getReaderContext().error(
+                &quot;Exactly one of the &quot; + DEFAULT\_IMPL + &quot; or &quot; + DELEGATE\_REF + &quot; attributes must be specified&quot;,
+                declareParentsElement, this.parseState.snapshot());
+    }
+
+    AbstractBeanDefinition definition = builder.getBeanDefinition();
+    definition.setSource(parserContext.extractSource(declareParentsElement));
+    // 向容器注册BeanDefinitiion对象
+    parserContext.getReaderContext().registerWithGeneratedName(definition);
+    return definition;
+}
+</code></pre><p>parseDeclareParents方法作用是向容器注册一个DeclareParentsAdvisor对象。</p>
+<p>（2）解析advice标签。spring提供了<a href="aop:before" target="_blank" rel="noopener">aop:before</a>、<a href="aop:after" target="_blank" rel="noopener">aop:after</a>、<a href="aop:after-returning" target="_blank" rel="noopener">aop:after-returning</a>、<a href="aop:after-throwing" target="_blank" rel="noopener">aop:after-throwing</a>、<a href="aop:around" target="_blank" rel="noopener">aop:around</a>5个advice标签，parseAspect调用parseAdvice方法来处理这些标签。</p>
+<p>private AbstractBeanDefinition parseAdvice(<br>            String aspectName, int order, Element aspectElement, Element adviceElement, ParserContext parserContext,<br>            List<beandefinition> beanDefinitions, List<beanreference> beanReferences) {</beanreference></beandefinition></p>
+<pre><code>    try {
+        this.parseState.push(new AdviceEntry(parserContext.getDelegate().getLocalName(adviceElement)));
+
+        // 创建一个方法工厂bean
+        RootBeanDefinition methodDefinition = new RootBeanDefinition(MethodLocatingFactoryBean.class);
+        methodDefinition.getPropertyValues().add(&quot;targetBeanName&quot;, aspectName);
+        methodDefinition.getPropertyValues().add(&quot;methodName&quot;, adviceElement.getAttribute(&quot;method&quot;));
+        methodDefinition.setSynthetic(true);
+
+        // 创建一个用于获取aspect实例的工厂
+        RootBeanDefinition aspectFactoryDef =
+                new RootBeanDefinition(SimpleBeanFactoryAwareAspectInstanceFactory.class);
+        aspectFactoryDef.getPropertyValues().add(&quot;aspectBeanName&quot;, aspectName);
+        aspectFactoryDef.setSynthetic(true);
+
+        // 创建Advice
+        AbstractBeanDefinition adviceDef = createAdviceDefinition(
+                adviceElement, parserContext, aspectName, order, methodDefinition, aspectFactoryDef,
+                beanDefinitions, beanReferences);
+
+        // 配置Advicor
+        RootBeanDefinition advisorDefinition = new RootBeanDefinition(AspectJPointcutAdvisor.class);
+        advisorDefinition.setSource(parserContext.extractSource(adviceElement));
+        advisorDefinition.getConstructorArgumentValues().addGenericArgumentValue(adviceDef);
+        if (aspectElement.hasAttribute(&quot;order&quot;)) {
+            advisorDefinition.getPropertyValues().add(
+                    &quot;order&quot;, aspectElement.getAttribute(&quot;order&quot;));
+        }
+
+        // 向容器中注册Advisor
+        parserContext.getReaderContext().registerWithGeneratedName(advisorDefinition);
+
+        return advisorDefinition;
+    } finally {
+        this.parseState.pop();
+    }
+}
+</code></pre><p>1，创建一个用于获取指定aspect实例方法的MethodLocatingFactoryBean对应的BeanDefinition。</p>
+<p>2，创建一个用于获取指定aspect实例的SimpleBeanFactoryAwareAspectInstanceFactory对应的BeanDefinition。</p>
+<p>3，调用ConfigBeanDefinitionParser解析器的createAdviceDefinition方法创建Advice的BeanDefinition，并注册这个BeanDefinition。</p>
+<p>我们看一下是如何创建创建Advice的BeanDefinition</p>
+<p>  private AbstractBeanDefinition createAdviceDefinition(<br>            Element adviceElement, ParserContext parserContext, String aspectName, int order,<br>            RootBeanDefinition methodDef, RootBeanDefinition aspectFactoryDef,<br>            List<beandefinition> beanDefinitions, List<beanreference> beanReferences) {</beanreference></beandefinition></p>
+<pre><code>    RootBeanDefinition adviceDefinition = new RootBeanDefinition(getAdviceClass(adviceElement, parserContext));
+    adviceDefinition.setSource(parserContext.extractSource(adviceElement));
+
+    adviceDefinition.getPropertyValues().add(&quot;aspectName&quot;, aspectName);
+    adviceDefinition.getPropertyValues().add(&quot;declarationOrder&quot;, order);
+
+    if (adviceElement.hasAttribute(&quot;returning&quot;)) {
+        adviceDefinition.getPropertyValues().add(
+                &quot;returningName&quot;, adviceElement.getAttribute(&quot;returning&quot;));
+    }
+    if (adviceElement.hasAttribute(&quot;throwing&quot;)) {
+        adviceDefinition.getPropertyValues().add(
+                &quot;throwingName&quot;, adviceElement.getAttribute(&quot;throwing&quot;));
+    }
+    if (adviceElement.hasAttribute(&quot;arg-names&quot;)) {
+        adviceDefinition.getPropertyValues().add(
+                &quot;argumentNames&quot;, adviceElement.getAttribute(&quot;arg-names&quot;));
+    }
+
+    ConstructorArgumentValues cav = adviceDefinition.getConstructorArgumentValues();
+    // 定义有METHOD_INDEX=0
+    cav.addIndexedArgumentValue(METHOD_INDEX, methodDef);
+
+    // 解析poincut和pointcut-ref属性
+    // 定义有POINTCUT_INDEX = 1
+    Object pointcut = parsePointcutProperty(adviceElement, parserContext);
+    if (pointcut instanceof BeanDefinition) {
+        cav.addIndexedArgumentValue(POINTCUT_INDEX, pointcut);
+        beanDefinitions.add((BeanDefinition) pointcut);
+    } else if (pointcut instanceof String) {
+        RuntimeBeanReference pointcutRef = new RuntimeBeanReference((String) pointcut);
+        cav.addIndexedArgumentValue(POINTCUT_INDEX, pointcutRef);
+        beanReferences.add(pointcutRef);
+    }
+    // 定义有ASPECT\_INSTANCE\_FACTORY_INDEX = 2
+    cav.addIndexedArgumentValue(ASPECT\_INSTANCE\_FACTORY_INDEX, aspectFactoryDef);
+
+    return adviceDefinition;
+}
+</code></pre><p>createAdviceDefinition方法主要是解析adive标签上的属性值。不过在处理属性之前，还需要判断标签类型是5中advice标签中的哪种，下面是getAdviceClass方法的源码。</p>
+<p>private Class&lt;?&gt; getAdviceClass(Element adviceElement, ParserContext parserContext) {<br>        String elementName = parserContext.getDelegate().getLocalName(adviceElement);<br>        if (“before”.equals(elementName)) {<br>            return AspectJMethodBeforeAdvice.class;<br>        } else if (“after”.equals(elementName)) {<br>            return AspectJAfterAdvice.class;<br>        } else if (“after-returning”.equals(elementName)) {<br>            return AspectJAfterReturningAdvice.class;<br>        } else if (“after-throwing”.equals(elementName)) {<br>            return AspectJAfterThrowingAdvice.class;<br>        } else if (“around”.equals(elementName)) {<br>            return AspectJAroundAdvice.class;<br>        } else {<br>            throw new IllegalArgumentException(“Unknown advice kind [“ + elementName + “].”);<br>        }<br>    }</p>
+<p>至此，我们就完成了探索spring遇到aop命名空间下的config标签时会创建哪些类型对应的BeanDefiniton，所有的Adivce也注册到了容器中。IOC容器也初始化完成了。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="100.html" title="Spring源码分析-AOP（三）XML解析">100.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spring源码分析-AOP（三）XML解析/" rel="tag"># Spring源码分析-AOP（三）XML解析</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/24/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-ba-8c-ef-bc-89-e5-85-a5-e9-97-a8/" rel="next" title="Spring源码分析-AOP（二）入门">
+                <i class="fa fa-chevron-left"></i> Spring源码分析-AOP（二）入门
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/27/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e5-9b-9b-ef-bc-89-e5-8c-b9-e9-85-8dadvisor/" rel="prev" title="Spring源码分析-AOP（四）匹配Advisor">
+                Spring源码分析-AOP（四）匹配Advisor <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://example.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#解析aop-config属性"><span class="nav-number">1.</span> <span class="nav-text">解析aop:config属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解析aop-pointcut标签"><span class="nav-number">2.</span> <span class="nav-text">解析aop:pointcut标签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解析aop-advisor标签"><span class="nav-number">3.</span> <span class="nav-text"> 解析aop:advisor标签</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#createAdvisorBeanDefinition方法"><span class="nav-number">3.1.</span> <span class="nav-text">createAdvisorBeanDefinition方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#parsePointcutProperty方法"><span class="nav-number">3.2.</span> <span class="nav-text">parsePointcutProperty方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解析aop-aspect标签"><span class="nav-number">4.</span> <span class="nav-text"> 解析aop:aspect标签</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">XiuYu.Ge</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/';
+          this.page.identifier = '2017/04/26/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-aop-ef-bc-88-e4-b8-89-ef-bc-89advices/';
+          this.page.title = 'Spring源码分析-AOP（三）XML解析';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
