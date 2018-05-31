@@ -421,8 +421,8 @@
       
         
           
-          最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。解决这个问题有两种方法
-
+          最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。
+解决这个问题有两种方法
 在select中加入group by排序的字段
 修改mysql 配置文件12[mysqld]sql_mode=NO_E
           ...

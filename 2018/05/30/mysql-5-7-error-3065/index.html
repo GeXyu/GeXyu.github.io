@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。解决这个问题有两种方法  在select中加入group by排序的字段 修改mysql 配置文件12[mysqld]sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES   然后重启数据库。">
+<meta name="description" content="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。 解决这个问题有两种方法 在select中加入group by排序的字段 修改mysql 配置文件12[mysqld]sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES   然后重启数据库。">
 <meta name="keywords" content="mysql">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mysql5.7导致的ERROR 3065">
 <meta property="og:url" content="http://www.zzcode.cn/2018/05/30/mysql-5-7-error-3065/index.html">
 <meta property="og:site_name" content="XiuYu.Ge">
-<meta property="og:description" content="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。解决这个问题有两种方法  在select中加入group by排序的字段 修改mysql 配置文件12[mysqld]sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES   然后重启数据库。">
+<meta property="og:description" content="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。 解决这个问题有两种方法 在select中加入group by排序的字段 修改mysql 配置文件12[mysqld]sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES   然后重启数据库。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-05-31T01:49:51.464Z">
+<meta property="og:updated_time" content="2018-05-31T01:55:18.705Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="mysql5.7导致的ERROR 3065">
-<meta name="twitter:description" content="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。解决这个问题有两种方法  在select中加入group by排序的字段 修改mysql 配置文件12[mysqld]sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES   然后重启数据库。">
+<meta name="twitter:description" content="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。 解决这个问题有两种方法 在select中加入group by排序的字段 修改mysql 配置文件12[mysqld]sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES   然后重启数据库。">
 
 
 
@@ -418,8 +418,8 @@
       
 
       
-        <h2 id="最近迁移服务器时把MySQL装到5-7，MYSQL5-7版本比之前版本的语法更严谨，如果GROUP-BY的字段没有在select中出现，他会报3065错误。"><a href="#最近迁移服务器时把MySQL装到5-7，MYSQL5-7版本比之前版本的语法更严谨，如果GROUP-BY的字段没有在select中出现，他会报3065错误。" class="headerlink" title="最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。"></a>最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。</h2><p>解决这个问题有两种方法</p>
-<ul>
+        <p>最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。</p>
+<h3 id="解决这个问题有两种方法"><a href="#解决这个问题有两种方法" class="headerlink" title="解决这个问题有两种方法"></a>解决这个问题有两种方法</h3><ul>
 <li>在select中加入group by排序的字段</li>
 <li>修改mysql 配置文件<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES</span><br></pre></td></tr></table></figure>
 </li>
@@ -440,10 +440,11 @@
 </li>
 <li><p>NO_ENGINE_SUBSTITUTION<br>使用 <code>ALTER TABLE</code>或<code>CREATE TABLE</code> 指定 <code>ENGINE</code> 时， 需要的存储引擎被禁用或未编译，该如何处理。启用<code>NO_ENGINE_SUBSTITUTION</code>时，那么直接抛出错误；不设置此值时，<code>CREATE</code>用默认的存储引擎替代，<code>ATLER</code>不进行更改，并抛出一个 <code>warning</code> .</p>
 </li>
-<li>STRICT_TRANS_TABLES<br>设置它，表示启用严格模式。<br>注意 <code>STRICT_TRANS_TABLES</code> 不是几种策略的组合，单独指 <code>INSERT、UPDATE</code>出现少值或无效值该如何处理<br>以上也不是全部的约束，只是挑几个常用的。具体还是要参考<a href="https://dev.mysql.com/doc/refman/5.6/en/sql-mode.html" target="_blank" rel="noopener">官方文档</a></li>
+<li>STRICT_TRANS_TABLES<br>设置它，表示启用严格模式。<br>注意 <code>STRICT_TRANS_TABLES</code> 不是几种策略的组合，单独指 <code>INSERT、UPDATE</code>出现少值或无效值该如何处理  </li>
 </ul>
 </li>
 </ul>
+<p>以上也不是全部的约束，只是挑几个常用的。具体还是要参考<a href="https://dev.mysql.com/doc/refman/5.6/en/sql-mode.html" target="_blank" rel="noopener">官方文档</a></p>
 
       
     </div>
@@ -711,7 +712,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#最近迁移服务器时把MySQL装到5-7，MYSQL5-7版本比之前版本的语法更严谨，如果GROUP-BY的字段没有在select中出现，他会报3065错误。"><span class="nav-number">1.</span> <span class="nav-text">最近迁移服务器时把MySQL装到5.7，MYSQL5.7版本比之前版本的语法更严谨，如果GROUP BY的字段没有在select中出现，他会报3065错误。</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#sqlModel"><span class="nav-number">1.1.</span> <span class="nav-text">sqlModel</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#解决这个问题有两种方法"><span class="nav-number">1.</span> <span class="nav-text">解决这个问题有两种方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sqlModel"><span class="nav-number">2.</span> <span class="nav-text">sqlModel</span></a></li></ol></div>
             
 
           </div>
