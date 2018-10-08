@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="JVM系列（一）类的加载机制," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="虚拟机把编译后的class文件加载到内存中，并对class文件进行校验，转换解析和初始化。最终执行可以直接被虚拟机使用的Java类型，这就是虚拟机的加载机制。在java语言中，类型的加载链接和初始化都是在运行时期完成，这种策略会稍微增加一些性能的开销，但是为Java程序提供了高度灵活性。JSP的热部署和OSGI技术都是使用了运行时期的类加载。 类的生命周期 类加载的过程包括了加载、验证、准备、解析">
+<meta name="keywords" content="JVM系列（一）类的加载机制">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM系列（一）类的加载机制">
+<meta property="og:url" content="http://www.zzcode.cn/2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="虚拟机把编译后的class文件加载到内存中，并对class文件进行校验，转换解析和初始化。最终执行可以直接被虚拟机使用的Java类型，这就是虚拟机的加载机制。在java语言中，类型的加载链接和初始化都是在运行时期完成，这种策略会稍微增加一些性能的开销，但是为Java程序提供了高度灵活性。JSP的热部署和OSGI技术都是使用了运行时期的类加载。 类的生命周期 类加载的过程包括了加载、验证、准备、解析">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/1345979728_9052.jpg">
+<meta property="og:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/331425-20160621125943787-249179344.jpg">
+<meta property="og:updated_time" content="2018-07-18T12:34:41.322Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JVM系列（一）类的加载机制">
+<meta name="twitter:description" content="虚拟机把编译后的class文件加载到内存中，并对class文件进行校验，转换解析和初始化。最终执行可以直接被虚拟机使用的Java类型，这就是虚拟机的加载机制。在java语言中，类型的加载链接和初始化都是在运行时期完成，这种策略会稍微增加一些性能的开销，但是为Java程序提供了高度灵活性。JSP的热部署和OSGI技术都是使用了运行时期的类加载。 类的生命周期 类加载的过程包括了加载、验证、准备、解析">
+<meta name="twitter:image" content="http://www.zzcode.cn/wp-content/uploads/2017/05/1345979728_9052.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/"/>
+
+
+
+
+
+  <title>JVM系列（一）类的加载机制 | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JVM系列（一）类的加载机制</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-12T15:19:00+08:00">
+                2017-05-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM系列（一）类的加载机制/" itemprop="url" rel="index">
+                    <span itemprop="name">JVM系列（一）类的加载机制</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/" class="leancloud_visitors" data-flag-title="JVM系列（一）类的加载机制">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>虚拟机把编译后的class文件加载到内存中，并对class文件进行校验，转换解析和初始化。最终执行可以直接被虚拟机使用的Java类型，这就是虚拟机的加载机制。在java语言中，类型的加载链接和初始化都是在运行时期完成，这种策略会稍微增加一些性能的开销，但是为Java程序提供了高度灵活性。JSP的热部署和OSGI技术都是使用了运行时期的类加载。</p>
+<h2 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a><strong>类的生命周期</strong></h2><p><img src="http://www.zzcode.cn/wp-content/uploads/2017/05/1345979728_9052.jpg" alt="1345979728_9052"></p>
+<p>类加载的过程包括了<strong>加载、验证、准备、解析、初始化</strong>五个阶段。在这五个阶段中，加载、验证、准备和初始化这四个阶段发生的顺序是确定的，而解析阶段则不一定，它在某些情况下可以在初始化阶段之后开始，这是为了支持Java语言的运行时绑定（也成为动态绑定或晚期绑定）。另外注意这里的几个阶段是按顺序开始，而不是按顺序进行或完成，因为这些阶段通常都是互相交叉地混合进行的，通常在一个阶段执行的过程中调用或激活另一个阶段。<strong>当解析在初始化之后执行时，称为动态绑定或者晚期绑定，例如：晚期绑定的多态特性</strong>。</p>
+<h3 id="1：加载"><a href="#1：加载" class="headerlink" title="1：加载"></a><strong>1：加载</strong></h3><p>主要是查找和加载二进制数据的过程，这里虚拟机会完成3件事：</p>
+<ul>
+<li>通过一个类的全限定名来获取其定义的二进制字节流。</li>
+<li>将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构。</li>
+<li>在Java堆中生成一个代表这个类的java.lang.Class对象，作为对方法区中这些数据的访问入口。</li>
+</ul>
+<p>这里加载二进制并没有强制从class文件中获取，也可以从zip包，网络中获取，也可以通过计算生成，譬如动态代理技术，或者是其他文件生成，譬如jsp文件生成对应的class类。加载阶段完成之后虚拟机将二进制字节流按照虚拟机格式存放在方法区中，然后在内存中虚拟出一个Class对象（在HotSport中，Class对象比较特殊，虽然是对象，但是存放在方法区中）。</p>
+<h3 id="2：链接"><a href="#2：链接" class="headerlink" title="2：链接"></a><strong>2：链接</strong></h3><h4 id="2-1-验证：验证是虚拟机链接的第一步，这一步主要是为了确保Class文件字节流的信息是否符合当前虚拟机的规范，并确保不会危害虚拟机自身的安全。验证阶段大约分为四个阶段的校验：文件格式校验，元数据验证，字节码验证，符号引用验证。"><a href="#2-1-验证：验证是虚拟机链接的第一步，这一步主要是为了确保Class文件字节流的信息是否符合当前虚拟机的规范，并确保不会危害虚拟机自身的安全。验证阶段大约分为四个阶段的校验：文件格式校验，元数据验证，字节码验证，符号引用验证。" class="headerlink" title="2.1 验证：验证是虚拟机链接的第一步，这一步主要是为了确保Class文件字节流的信息是否符合当前虚拟机的规范，并确保不会危害虚拟机自身的安全。验证阶段大约分为四个阶段的校验：文件格式校验，元数据验证，字节码验证，符号引用验证。"></a>2.1 验证：验证是虚拟机链接的第一步，这一步主要是为了确保Class文件字节流的信息是否符合当前虚拟机的规范，并确保不会危害虚拟机自身的安全。验证阶段大约分为四个阶段的校验：文件格式校验，元数据验证，字节码验证，符号引用验证。</h4><ul>
+<li><p>文件格式校验：是否符合Class文件规范，并且能被当前虚拟机处理</p>
+</li>
+<li><p>元数据验证：对字节码的信息进行语义分析</p>
+</li>
+<li><p>字节码验证：通过对数据流和控制流分析，确定程序语义时候合法，符合逻辑。完成之后还会对类的方法体进行验证分析，保证方法在运行时不会危害虚拟机。</p>
+</li>
+<li><p>符号引用验证：虚拟机将符号引用转换为直接引用。</p>
+</li>
+</ul>
+<p>2.2 准备：正式为类分配内存并设置类变量初始值，这些变量将会在方法区内分配内存。</p>
+<p>public int value = 123;<br>public static int value = 123;<br>public static final int value = 123;</p>
+<p>上面第一条语句在准备阶段过后初始值会被复制为0，在对象被new出来之后才会赋值为123。第二句虽然被static修饰，但是在准备阶段过后，初始值也是0，他会在类初始化时被赋值为123。第三句同时被static final修饰，他会在准备阶段将value赋值为123。</p>
+<p>2.3 解析:虚拟机将常量池内的符号引用替换为直接引用的过程，解析动作主要针对类或接口、字段、类方法、接口方法、方法类型、方法句柄和调用点限定符7类符号引用进行。</p>
+<p><strong>符号引用</strong>就是一组符号来描述目标，可以是任何字面量。</p>
+<p><strong>直接引用</strong>就是直接指向目标的指针、相对偏移量或一个间接定位到目标的句柄。</p>
+<h3 id="3：初始化"><a href="#3：初始化" class="headerlink" title="3：初始化"></a><strong>3：初始化</strong></h3><p>初始化阶段是类加载的最后一个阶段，在初始化阶段其实就是初始化类变量和其它资源，某种角度来说就是类构造器Clinit()方法的执行过程，Clinit()大约就下面这几件事：</p>
+<ul>
+<li>为静态属性和静态语句块属性赋值</li>
+<li>确保类的构造器中显式调用父类构造器（保证父类比之类初始化早）。</li>
+<li>初始化一个类时，保证单线程去初始化，其他线程需要堵塞。</li>
+</ul>
+<h3 id="4：使用"><a href="#4：使用" class="headerlink" title="4：使用"></a><strong>4：使用</strong></h3><p>经过上面处理的ByteCode要不解释执行，要不翻译成机器码，取指执行。</p>
+<h3 id="5：卸载"><a href="#5：卸载" class="headerlink" title="5：卸载"></a><strong>5：卸载</strong></h3><ul>
+<li>有启动类加载器加载的类型在整个运行期间是不可能被卸载的(jvm和jls规范)</li>
+<li>被系统类加载器和标准扩展类加载器加载的类型在运行期间不太可能被卸载，因为系统类加载器实例或者标准扩展类的实例基本上在整个运行期间总能直接或者间接的访问的到，其达到unreachable的可能性极小.(当然，在虚拟机快退出的时候可以，因为不管ClassLoader实例或者Class(java.lang.Class)实例也都是在堆中存在，同样遵循垃圾收集的规则).</li>
+<li>被开发者自定义的类加载器实例加载的类型只有在很简单的上下文环境中才能被卸载，而且一般还要借助于强制调用虚拟机的垃圾收集功能才可以做到.可以预想，稍微复杂点的应用场景中(尤其很多时候，用户在开发自定义类加载器实例的时候采用缓存的策略以提高系统性能)，被加载的类型在运行期间也是几乎不太可能被卸载的(至少卸载的时间是不确定的).</li>
+</ul>
+<h2 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器 "></a><strong>类加载器 </strong></h2><p>“通过一个类的全限定名来获取该类的二进制字节流”这个动作放到java虚拟机外部去实现，以便让应用程序自己决定如何获取所需要的类，实现这个动作的代码模块就是“类加载器”。Java的虚拟机叫JVM。当我们在命令行执行 java HelloWord的时候，JVM干了下面几件事，也就是类加载过程：</p>
+<ul>
+<li>产生一个Bootstrap Loader（引导类加载器）</li>
+<li>Bootstrap Loader（引导类加载器）自动加载Extended Loader（标准扩展类加载器），并将其父Loader设为Bootstrap Loader。</li>
+<li>Bootstrap Loader（引导类加载器）自动加载AppClass Loader（系统类加载器），并将其父Loader设为Extended Loader。</li>
+<li>最后由AppClass Loader加载HelloWorld类。</li>
+</ul>
+<p>下面就是各个加载器之间的层次关系，<strong>这里父类加载器并不是通过继承关系来实现的，而是采用组合实现的</strong></p>
+<p><img src="http://www.zzcode.cn/wp-content/uploads/2017/05/331425-20160621125943787-249179344.jpg" alt="331425-20160621125943787-249179344"></p>
+<p>站在Java虚拟机的角度来讲，只存在两种不同的类加载器：<strong>启动类加载器</strong>：它使用C++实现，是虚拟机自身的一部分；所有其他的类加载器：这些类加载器都由Java语言实现，独立于虚拟机之外，并且全部继承自抽象类java.lang.ClassLoader，这些类加载器需要由启动类加载器加载到内存中之后才能去加载其他的类。这些加载器可以分为一下三种类加载器：</p>
+<ul>
+<li><strong>启动类加载器</strong>：Bootstrap ClassLoader，负责加载存放在JDK\jre\lib(JDK代表JDK的安装目录，下同)下，或被-Xbootclasspath参数指定的路径中的，并且能被虚拟机识别的类库（如rt.jar，所有的java.*开头的类均被Bootstrap ClassLoader加载）。启动类加载器是无法被Java程序直接引用的。</li>
+<li><strong>扩展类加载器</strong>：Extension ClassLoader，该加载器由sun.misc.Launcher$ExtClassLoader实现，它负责加载DK\jre\lib\ext目录中，或者由java.ext.dirs系统变量指定的路径中的所有类库（如javax.*开头的类），开发者可以直接使用扩展类加载器。</li>
+<li><strong>应用程序类加载器</strong>：Application ClassLoader，该类加载器由sun.misc.Launcher$AppClassLoader来实现，它负责加载用户类路径（ClassPath）所指定的类，开发者可以直接使用该类加载器，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中默认的类加载器。</li>
+</ul>
+<h3 id="双亲委派模型"><a href="#双亲委派模型" class="headerlink" title="双亲委派模型"></a><strong>双亲委派模型</strong></h3><p>从上图中可以看到类加载器之间的层次关系，这种层次关系称为双亲委派模型。（这种关系并不是通过继承实现，而是通过组合实现）。双亲委派模型除了顶层启动类加载器之外，其余的都要有自己的父类加载器。双亲委派的工作过程：如果一个类加载器收到了类加载的请求，它首先不会自己去尝试加载这个类，而是把请求委托给父加载器去完成，依次向上，因此，所有的类加载请求最终都应该被传递到顶层的启动类加载器中，只有当父加载器在它的搜索范围中没有找到所需的类时，即无法完成该加载，子加载器才会尝试自己去加载该类。</p>
+<p>在JVM中具体的过程就是：</p>
+<ul>
+<li>当AppClassLoader加载一个class时，它首先不会自己去尝试加载这个类，而是把类加载请求委派给父类加载器ExtClassLoader去完成。</li>
+<li>当ExtClassLoader加载一个class时，它首先也不会自己去尝试加载这个类，而是把类加载请求委派给BootStrapClassLoader去完成。</li>
+<li>如果BootStrapClassLoader加载失败（例如在$JAVA_HOME/jre/lib里未查找到该class），会使用ExtClassLoader来尝试加载；</li>
+<li>若ExtClassLoader也加载失败，则会使用AppClassLoader来加载，如果AppClassLoader也加载失败，则会报出异常ClassNotFoundException。</li>
+</ul>
+<h4 id="双亲委派模型的实现："><a href="#双亲委派模型的实现：" class="headerlink" title="双亲委派模型的实现："></a>双亲委派模型的实现：</h4><p>public Class&lt;?&gt; loadClass(String name)throws ClassNotFoundException {<br>            return loadClass(name, false);<br>    }</p>
+<pre><code>protected synchronized Class&lt;?&gt; loadClass(String name, boolean resolve)throws ClassNotFoundException {
+        // 首先判断该类型是否已经被加载
+        Class c = findLoadedClass(name);
+        if (c == null) {
+            //如果没有被加载，就委托给父类加载或者委派给启动类加载器加载
+            try {
+                if (parent != null) {
+                     //如果存在父类加载器，就委派给父类加载器加载
+                    c = parent.loadClass(name, false);
+                } else {
+                //如果不存在父类加载器，就检查是否是由启动类加载器加载的类，通过调用本地方法native Class findBootstrapClass(String name)
+                    c = findBootstrapClass0(name);
+                }
+            } catch (ClassNotFoundException e) {
+             // 如果父类加载器和启动类加载器都不能完成加载任务，才调用自身的加载功能
+                c = findClass(name);
+            }
+        }
+        if (resolve) {
+            resolveClass(c);
+        }
+        return c;
+    }
+</code></pre><h3 id="jvm加载机制"><a href="#jvm加载机制" class="headerlink" title="jvm加载机制"></a><strong>jvm加载机制</strong></h3><ul>
+<li><strong>全盘负责</strong>，当一个类加载器负责加载某个Class时，该Class所依赖的和引用的其他Class也将由该类加载器负责载入，除非显示使用另外一个类加载器来载入。</li>
+<li><strong>父类委托</strong>，先让父类加载器试图加载该类，只有在父类加载器无法加载该类时才尝试从自己的类路径中加载该类。</li>
+<li><strong>缓存机制</strong>，缓存机制将会保证所有加载过的Class都会被缓存，当程序中需要使用某个Class时，类加载器先从缓存区寻找该Class，只有缓存区不存在，系统才会读取该类对应的二进制数据，并将其转换成Class对象，存入缓存区。这就是为什么修改了Class后，必须重启JVM，程序的修改才会生效。</li>
+</ul>
+<h3 id="自定义类加载器"><a href="#自定义类加载器" class="headerlink" title="自定义类加载器"></a><strong>自定义类加载器</strong></h3><p>通常情况下，我们都是直接使用系统类加载器。但是，有的时候，我们也需要自定义类加载器。比如应用是通过网络来传输 Java 类的字节码，为保证安全性，这些字节码经过了加密处理，这时系统类加载器就无法对其进行加载，这样则需要自定义类加载器来实现。自定义类加载器一般都是继承自 ClassLoader 类，我们应该把加载类的业务逻辑在线findClass()方法中，在从上面loadClass源码里面可以看到如果没有父类加载失败，会调用findClass方法来完成加载。这样我们写出来的自定义类加载器就不会破坏双亲委派模型。这里我们只关注核心内容就是对字节码文件的获取。</p>
+<p>public class MyClassLoader extends ClassLoader{<br>    private String root;<br>    public void setRoot(String root) {<br>        this.root = root;<br>    }<br>    @Override<br>    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {<br>        byte[] classData = loadClassData(name);<br>        if (classData == null) {<br>            return super.findClass(name);<br>        } else {<br>            return defineClass(name, classData, 0, classData.length);<br>        }<br>    }</p>
+<pre><code>private byte\[\] loadClassData(String className){
+    try {
+         String fileName = root + File.separatorChar + className.replace(&apos;.&apos;, File.separatorChar) + &quot;.class&quot;;
+
+         InputStream input = new FileInputStream(fileName);
+         ByteArrayOutputStream out = new ByteArrayOutputStream();
+         byte\[\] buff = new byte\[1024\];
+         int length = 0;
+         while((length = input.read(buff))&gt;0){
+             out.write(buff, 0, length);
+         }
+         return out.toByteArray();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return null; 
+ }
+
+public static void main(String\[\] args) throws Exception {
+    MyClassLoader loader = new MyClassLoader();
+    loader.setRoot(&quot;E:/&quot;);
+    Object o = loader.loadClass(&quot;cn.xiuyu.loader.TestClass&quot;);
+    System.out.println(o);
+
+}
+</code></pre><p>}</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="203.html" title="JVM系列（一）类的加载机制">203.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JVM系列（一）类的加载机制/" rel="tag"># JVM系列（一）类的加载机制</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/04/springaop-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e7-b3-bb-e5-88-97/" rel="next" title="SpringAOP源码分析系列">
+                <i class="fa fa-chevron-left"></i> SpringAOP源码分析系列
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/21/e5-8d-9a-e5-ae-a2-e7-8e-af-e5-a2-83-e6-94-b9-e4-b8-baliunx/" rel="prev" title="博客环境改为Liunx">
+                博客环境改为Liunx <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://school1024.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#类的生命周期"><span class="nav-number">1.</span> <span class="nav-text">类的生命周期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1：加载"><span class="nav-number">1.1.</span> <span class="nav-text">1：加载</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2：链接"><span class="nav-number">1.2.</span> <span class="nav-text">2：链接</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-验证：验证是虚拟机链接的第一步，这一步主要是为了确保Class文件字节流的信息是否符合当前虚拟机的规范，并确保不会危害虚拟机自身的安全。验证阶段大约分为四个阶段的校验：文件格式校验，元数据验证，字节码验证，符号引用验证。"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1 验证：验证是虚拟机链接的第一步，这一步主要是为了确保Class文件字节流的信息是否符合当前虚拟机的规范，并确保不会危害虚拟机自身的安全。验证阶段大约分为四个阶段的校验：文件格式校验，元数据验证，字节码验证，符号引用验证。</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3：初始化"><span class="nav-number">1.3.</span> <span class="nav-text">3：初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4：使用"><span class="nav-number">1.4.</span> <span class="nav-text">4：使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5：卸载"><span class="nav-number">1.5.</span> <span class="nav-text">5：卸载</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载器"><span class="nav-number">2.</span> <span class="nav-text">类加载器 </span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#双亲委派模型"><span class="nav-number">2.1.</span> <span class="nav-text">双亲委派模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#双亲委派模型的实现："><span class="nav-number">2.1.1.</span> <span class="nav-text">双亲委派模型的实现：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jvm加载机制"><span class="nav-number">2.2.</span> <span class="nav-text">jvm加载机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义类加载器"><span class="nav-number">2.3.</span> <span class="nav-text">自定义类加载器</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"><a target="_blank" href="http://www.miitbeian.gov.cn">鲁ICP备16041054号</a></span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+  <div class="footer-custom"><a target="_blank" href="http://www.miitbeian.gov.cn">鲁ICP备16041054号</a></div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/';
+          this.page.identifier = '2017/05/12/jvm-e7-b3-bb-e5-88-97-ef-bc-88-e4-b8-80-ef-bc-89-e7-b1-bb-e7-9a-84-e5-8a-a0-e8-bd-bd-e6-9c-ba-e5-88-b6/';
+          this.page.title = 'JVM系列（一）类的加载机制';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

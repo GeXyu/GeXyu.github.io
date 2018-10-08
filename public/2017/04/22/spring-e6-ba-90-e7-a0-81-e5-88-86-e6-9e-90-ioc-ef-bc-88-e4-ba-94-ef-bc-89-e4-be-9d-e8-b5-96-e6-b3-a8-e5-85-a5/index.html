@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Spring源码分析-IOC（五）依赖注入," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上篇文章看完的同学，估计已经了解了ioc容器是如何初始化并载入了用户定义的Bean信息。那么依赖注入是什么时候触发的？其实依赖注入是当用户getBean的时候触发依赖注入，当然也有例外，就是当Bean配置了lazy-init的时候，依赖注入在ioc容器初始化的时候注入。可以从测试类的getBean出发去看看具体是的实现。 依赖注入//调用了AbstractBeanFactory的getBean方法">
+<meta name="keywords" content="Spring源码分析-IOC（五）依赖注入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring源码分析-IOC（五）依赖注入">
+<meta property="og:url" content="http://www.zzcode.cn/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/index.html">
+<meta property="og:site_name" content="XiuYu.Ge">
+<meta property="og:description" content="上篇文章看完的同学，估计已经了解了ioc容器是如何初始化并载入了用户定义的Bean信息。那么依赖注入是什么时候触发的？其实依赖注入是当用户getBean的时候触发依赖注入，当然也有例外，就是当Bean配置了lazy-init的时候，依赖注入在ioc容器初始化的时候注入。可以从测试类的getBean出发去看看具体是的实现。 依赖注入//调用了AbstractBeanFactory的getBean方法">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-07-18T12:34:41.332Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring源码分析-IOC（五）依赖注入">
+<meta name="twitter:description" content="上篇文章看完的同学，估计已经了解了ioc容器是如何初始化并载入了用户定义的Bean信息。那么依赖注入是什么时候触发的？其实依赖注入是当用户getBean的时候触发依赖注入，当然也有例外，就是当Bean配置了lazy-init的时候，依赖注入在ioc容器初始化的时候注入。可以从测试类的getBean出发去看看具体是的实现。 依赖注入//调用了AbstractBeanFactory的getBean方法">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zzcode.cn/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/"/>
+
+
+
+
+
+  <title>Spring源码分析-IOC（五）依赖注入 | XiuYu.Ge</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f9be35ef272dded1e9e9c860f579bb7b";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">XiuYu.Ge</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zzcode.cn/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="XiuYu.Ge">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="XiuYu.Ge">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring源码分析-IOC（五）依赖注入</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-22T09:05:04+08:00">
+                2017-04-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Spring源码分析-IOC（五）依赖注入/" itemprop="url" rel="index">
+                    <span itemprop="name">Spring源码分析-IOC（五）依赖注入</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/" class="leancloud_visitors" data-flag-title="Spring源码分析-IOC（五）依赖注入">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上篇文章看完的同学，估计已经了解了ioc容器是如何初始化并载入了用户定义的Bean信息。那么依赖注入是什么时候触发的？其实依赖注入是当用户getBean的时候触发依赖注入，当然也有例外，就是当Bean配置了lazy-init的时候，依赖注入在ioc容器初始化的时候注入。可以从测试类的getBean出发去看看具体是的实现。</p>
+<h2 id="依赖注入"><a href="#依赖注入" class="headerlink" title="依赖注入"></a><strong>依赖注入</strong></h2><p>//调用了AbstractBeanFactory的getBean方法<br>@Override<br>    public <t> T getBean(String name, Class<t> requiredType) throws BeansException {<br>        return doGetBean(name, requiredType, null, false);<br>    }<br>@SuppressWarnings(“unchecked”)<br>// doGetBean方法是实际触发依赖注入的地方<br>    protected <t> T doGetBean(<br>            final String name, final Class<t> requiredType, final Object[] args, boolean typeCheckOnly)<br>            throws BeansException {<br>//指定名称获取被管理的Bean名称，并且指定名称中对容器的依赖<br>//如果是别名，将别名转变为Bean的名称<br>        final String beanName = transformedBeanName(name);<br>        Object bean;</t></t></t></t></p>
+<pre><code>//先缓存取得的Bean以及处理创建过的单件模式的Bean
+//单态模式的Bean只能创建一次.
+Object sharedInstance = getSingleton(beanName);
+if (sharedInstance != null &amp;&amp; args == null) {
+    if (logger.isDebugEnabled()) {
+</code></pre><p>//如果指定名称的Bean在容器中已经存在，则直接返回<br>                if (isSingletonCurrentlyInCreation(beanName)) {<br>                    logger.debug(“Returning eagerly cached instance of singleton bean ‘“ + beanName +<br>                            “‘ that is not fully initialized yet - a consequence of a circular reference”);<br>                }<br>                else {<br>                    logger.debug(“Returning cached instance of singleton bean ‘“ + beanName + “‘“);<br>                }<br>            }<br>              //这里完成FactoryBean的相关处理<br>            bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);<br>        }</p>
+<pre><code>else {
+    //缓存中如果已经存在创建的单态模式，因为循环而创建失败，则抛出异常
+    if (isPrototypeCurrentlyInCreation(beanName)) {
+        throw new BeanCurrentlyInCreationException(beanName);
+    }
+
+    //对容器中的BeanDefinition进行检查，检查能否在当前的BeanFactory中取得Bean.
+</code></pre><p>//如果在当前的工厂中取不到，则到父类的BeanFactory中去取<br>//如果在父类中取不到，则到父类的父类中取.<br>            BeanFactory parentBeanFactory = getParentBeanFactory();<br>//当前容器的父容器存在，且当前容器中不存在指名的Bean<br>            if (parentBeanFactory != null &amp;&amp; !containsBeanDefinition(beanName)) {<br>                //  //解析Bean的原始名.<br>                String nameToLookup = originalBeanName(name);<br>                if (args != null) {<br>                    // //委派给父类容器查找，根据指定的名称和显示参数.<br>                    return (T) parentBeanFactory.getBean(nameToLookup, args);<br>                }<br>                else {<br>                    // //委派给父类容器查找，根据指定的名称和类型.<br>                    return parentBeanFactory.getBean(nameToLookup, requiredType);<br>                }<br>            }<br>//创建的Bean是否需要进行验证，一般不需要<br>            if (!typeCheckOnly) {<br>                   //向容器指定的Bean已被创建<br>                markBeanAsCreated(beanName);<br>            }</p>
+<pre><code>try {
+     //根据Bean的名字获取BeanDefinition
+    final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+    checkMergedBeanDefinition(mbd, beanName, args);
+
+    //获取当前Bean的所有依赖的名称.
+    String\[\] dependsOn = mbd.getDependsOn();
+</code></pre><p>//如果当前Bean有依赖Bean<br>                if (dependsOn != null) {<br>                    for (String dependsOnBean : dependsOn) {<br>                        if (isDependent(beanName, dependsOnBean)) {<br>                            throw new BeanCreationException(mbd.getResourceDescription(), beanName,<br>                                    “Circular depends-on relationship between ‘“ + beanName + “‘ and ‘“ + dependsOnBean + “‘“);<br>                        }<br>                             //把被依赖的Bean注册给当前依赖的Bean<br>                        registerDependentBean(dependsOnBean, beanName);<br>                            //触发递归<br>                        getBean(dependsOnBean);<br>                    }<br>                }</p>
+<pre><code>//创建单态模式的Bean实例对象.
+if (mbd.isSingleton()) {
+       //使用一个内部匿名类，创建Bean实例对象，并且注册对所依赖的对象
+    sharedInstance = getSingleton(beanName, new ObjectFactory&lt;Object&gt;() {
+        @Override
+        public Object getObject() throws BeansException {
+            try {
+                   //创建一个指定Bean实例对象，如果有父级继承，则合并资对象
+                return createBean(beanName, mbd, args);
+            }
+            catch (BeansException ex) {
+                // Explicitly remove instance from singleton cache: It might have been put there
+                // eagerly by the creation process, to allow for circular reference resolution.
+                // Also remove any beans that received a temporary reference to the bean.
+</code></pre><p>//清除显示容器单例模式Bean缓存中的实例对象<br>                                destroySingleton(beanName);<br>                                throw ex;<br>                            }<br>                        }<br>                    });<br>                            //获取给定Bean实例对象<br>                    bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);<br>                }<br>                       // 判断是否是原型模式<br>                else if (mbd.isPrototype()) {<br>                    // It’s a prototype -&gt; create a new instance.<br>                       //原型模式会每次创建一个新的对象<br>                    Object prototypeInstance = null;<br>                    try {<br>                            //回调方法，注册原型对象<br>                        beforePrototypeCreation(beanName);<br>                            //创建指定Bean对象实例<br>                        prototypeInstance = createBean(beanName, mbd, args);<br>                    }<br>                    finally {<br>                           //回调方法，Bean无法再次创建<br>                        afterPrototypeCreation(beanName);<br>                    }<br>                       //获取给定Bean的实例对象<br>                    bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);<br>                }</p>
+<pre><code>            else {
+                String scopeName = mbd.getScope();
+                final Scope scope = this.scopes.get(scopeName);
+                  //Bean定义资源中没有配置生命周期范围，则Bean不合法
+                if (scope == null) {
+                    throw new IllegalStateException(&quot;No Scope registered for scope &apos;&quot; + scopeName + &quot;&apos;&quot;);
+                }
+                try {
+                   //这里使用一个匿名类，获取一个指定的生命周期范围
+                    Object scopedInstance = scope.get(beanName, new ObjectFactory&lt;Object&gt;() {
+                        @Override
+                        public Object getObject() throws BeansException {
+                            beforePrototypeCreation(beanName);
+                            try {
+                                return createBean(beanName, mbd, args);
+                            }
+                            finally {
+                                afterPrototypeCreation(beanName);
+                            }
+                        }
+                    });
+                     //获取给定Bean的实例对象
+                    bean = getObjectForBeanInstance(scopedInstance, name, beanName, mbd);
+                }
+                catch (IllegalStateException ex) {
+                    throw new BeanCreationException(beanName,
+                            &quot;Scope &apos;&quot; + scopeName + &quot;&apos; is not active for the current thread; &quot; +
+                            &quot;consider defining a scoped proxy for this bean if you intend to refer to it from a singleton&quot;,
+                            ex);
+                }
+            }
+        }
+        catch (BeansException ex) {
+            cleanupAfterBeanCreationFailure(beanName);
+            throw ex;
+        }
+    }
+
+// 对创建的Bean进行类型检查，如果没有问题，就返回这个新建的Bean，这个Bean已经包含了依赖关系.
+    if (requiredType != null &amp;&amp; bean != null &amp;&amp; !requiredType.isAssignableFrom(bean.getClass())) {
+        try {
+            return getTypeConverter().convertIfNecessary(bean, requiredType);
+        }
+        catch (TypeMismatchException ex) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(&quot;Failed to convert bean &apos;&quot; + name + &quot;&apos; to required type \[&quot; +
+                        ClassUtils.getQualifiedName(requiredType) + &quot;\]&quot;, ex);
+            }
+            throw new BeanNotOfRequiredTypeException(name, requiredType, bean.getClass());
+        }
+    }
+    return (T) bean;
+}
+</code></pre><p>从上面，可以看出doGetBean，是依赖注入的实际入口，他定义了Bean的定义模式，单例模式（Singleton）和原型模（Prototype），而依赖注入触发的前提是BeanDefinition数据已经建立好的前提下。其实对于Ioc容器的使用，Spring提供了许多的参数配置，每一个参数配置实际上代表了一个Ioc实现特性，而这些特性的实现很多都需要在依赖注入的过程中或者对Bean进行生命周期管理的过程中完成。Spring Ioc容器作为一个产品，其真正的价值体现在一系列产品特征上，而这些特征都是以依赖反转模式作为核心，他们为控制反转提供了很多便利，从而实现了完整的Ioc容器。</p>
+<h3 id="bean-实例的创建和初始化：-createBean"><a href="#bean-实例的创建和初始化：-createBean" class="headerlink" title="bean**实例的创建和初始化：**createBean"></a><strong>bean**</strong>实例的创建和初始化：<strong>**createBean</strong></h3><p>getBean是依赖注入的起点，之后就会调用createBean，createBean可以生成需要的Bean以及对Bean进行初始化，但对createBean进行跟踪，发现他在AbstractBeanFactory中仅仅是声明，而具体实现是在AbstractAutowireCapableBeanFactory类里。</p>
+<p>@Override<br>    protected Object createBean(final String beanName, final RootBeanDefinition mbd, final Object[] args)<br>            throws BeanCreationException {</p>
+<pre><code>if (logger.isDebugEnabled()) {
+    logger.debug(&quot;Creating instance of bean &apos;&quot; + beanName + &quot;&apos;&quot;);
+}
+//判断创建的Bean是否需要实例化，以及这个类是否需要通过类来装载.
+resolveBeanClass(mbd, beanName);
+
+//校验和准备中的方法覆盖.
+try {
+    mbd.prepareMethodOverrides();
+}
+catch (BeanDefinitionValidationException ex) {
+    throw new BeanDefinitionStoreException(mbd.getResourceDescription(),
+            beanName, &quot;Validation of method overrides failed&quot;, ex);
+}
+
+try {
+    //如果Bean配置了初始化前和后的处理器，则返回一个Bean对象.
+    Object bean = resolveBeforeInstantiation(beanName, mbd);
+    if (bean != null) {
+        return bean;
+    }
+}
+catch (Throwable ex) {
+    throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+            &quot;BeanPostProcessor before instantiation of bean failed&quot;, ex);
+}
+</code></pre><p> //创建Bean的入口<br>Object beanInstance = doCreateBean(beanName, mbd, args);<br>        if (logger.isDebugEnabled()) {<br>            logger.debug(“Finished creating instance of bean ‘“ + beanName + “‘“);<br>        }<br>        return beanInstance;<br>    }</p>
+<p>//Bean的真正创建位置<br>protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final Object[] args) {<br>        /// 这个BearWrapper是用来封装创建出来的Bean对象的.<br>        BeanWrapper instanceWrapper = null;<br>// 如果是单态模式，就先把缓存中同名的Bean清除<br>        if (mbd.isSingleton()) {<br>            instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);<br>        }<br>         //创建Bean，由createBeanInstance来完成<br>        if (instanceWrapper == null) {<br>            instanceWrapper = createBeanInstance(beanName, mbd, args);<br>        }<br>        final Object bean = (instanceWrapper != null ? instanceWrapper.getWrappedInstance() : null);<br>        Class&lt;?&gt; beanType = (instanceWrapper != null ? instanceWrapper.getWrappedClass() : null);</p>
+<pre><code>// Allow post-processors to modify the merged bean definition.
+   //调用PostProcessor后置处理器
+synchronized (mbd.postProcessingLock) {
+    if (!mbd.postProcessed) {
+        applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
+        mbd.postProcessed = true;
+    }
+}
+
+// Eagerly cache singletons to be able to resolve circular references
+// even when triggered by lifecycle interfaces like BeanFactoryAware.
+  //缓存单态模式的Bean对象，以防循环引用
+boolean earlySingletonExposure = (mbd.isSingleton() &amp;&amp; this.allowCircularReferences &amp;&amp;
+        isSingletonCurrentlyInCreation(beanName));
+if (earlySingletonExposure) {
+    if (logger.isDebugEnabled()) {
+        logger.debug(&quot;Eagerly caching bean &apos;&quot; + beanName +
+                &quot;&apos; to allow for resolving potential circular references&quot;);
+    }
+       //匿名类，防止循环引用，可尽早的持有引用对象
+    addSingletonFactory(beanName, new ObjectFactory&lt;Object&gt;() {
+        @Override
+        public Object getObject() throws BeansException {
+            return getEarlyBeanReference(beanName, mbd, bean);
+        }
+    });
+}
+
+// Initialize the bean instance.
+</code></pre><p>//初始化Bean的地方，依赖注入发生的地方<br>        //exposedObject在初始化完成后，会作为依赖注入完成后的Bean<br>        Object exposedObject = bean;<br>        try {<br>              //将Bean实例对象进行封装，并将Bean定义的配置属性赋值给实例对象<br>            populateBean(beanName, mbd, instanceWrapper);<br>            if (exposedObject != null) {<br>                   //初始化Bean<br>                exposedObject = initializeBean(beanName, exposedObject, mbd);<br>            }<br>        }<br>        catch (Throwable ex) {<br>            if (ex instanceof BeanCreationException &amp;&amp; beanName.equals(((BeanCreationException) ex).getBeanName())) {<br>                throw (BeanCreationException) ex;<br>            }<br>            else {<br>                throw new BeanCreationException(mbd.getResourceDescription(), beanName, “Initialization of bean failed”, ex);<br>            }<br>        }</p>
+<pre><code>    if (earlySingletonExposure) {
+          //获取指定名称的单态模式对象
+        Object earlySingletonReference = getSingleton(beanName, false);
+        if (earlySingletonReference != null) {
+              //判断注册的实例化Bean和正在实例化的Bean是同一个
+            if (exposedObject == bean) {
+                exposedObject = earlySingletonReference;
+            }
+         //当前Bean依赖其他Bean，并且当发生循环引用时不允许创建新实例
+            else if (!this.allowRawInjectionDespiteWrapping &amp;&amp; hasDependentBean(beanName)) {
+                String\[\] dependentBeans = getDependentBeans(beanName);
+                Set&lt;String&gt; actualDependentBeans = new LinkedHashSet&lt;String&gt;(dependentBeans.length);
+                    //获取当前Bean的所有依赖
+                for (String dependentBean : dependentBeans) {
+                             //对依赖bean进行检查
+                    if (!removeSingletonIfCreatedForTypeCheckOnly(dependentBean)) {
+                        actualDependentBeans.add(dependentBean);
+                    }
+                }
+                if (!actualDependentBeans.isEmpty()) {
+                    throw new BeanCurrentlyInCreationException(beanName,
+                            &quot;Bean with name &apos;&quot; + beanName + &quot;&apos; has been injected into other beans \[&quot; +
+                            StringUtils.collectionToCommaDelimitedString(actualDependentBeans) +
+                            &quot;\] in its raw version as part of a circular reference, but has eventually been &quot; +
+                            &quot;wrapped. This means that said other beans do not use the final version of the &quot; +
+                            &quot;bean. This is often the result of over-eager type matching - consider using &quot; +
+                            &quot;&apos;getBeanNamesOfType&apos; with the &apos;allowEagerInit&apos; flag turned off, for example.&quot;);
+                }
+            }
+        }
+    }
+
+    //注册完成依赖注入的Bean.
+    try {
+        registerDisposableBeanIfNecessary(beanName, bean, mbd);
+    }
+    catch (BeanDefinitionValidationException ex) {
+        throw new BeanCreationException(mbd.getResourceDescription(), beanName, &quot;Invalid destruction signature&quot;, ex);
+    }
+
+    return exposedObject;
+}
+</code></pre><p>在对doCreateBean的追踪中我们发现Bean的创建方法createBeanInstance与BeanDefinition的载入与解析方法populateBean方法是最为重要的。因为控制反转原理的实现就是在这两个方法中实现的。</p>
+<h3 id="生成Bean中的对象：createBeanInstance"><a href="#生成Bean中的对象：createBeanInstance" class="headerlink" title="生成Bean中的对象：createBeanInstance"></a><strong>生成Bean中的对象：createBeanInstance</strong></h3><p>在createBeanInstance中生成了Bean所包含的Java对象，对象的生成有很多种不同的方法：工厂方法+反射，容器的autowire特性等等，这些生成方法都是由相关BeanDefinition来指定的。</p>
+<p>protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, Object[] args) {<br>        // Make sure bean class is actually resolved at this point.<br>         // 确认需要创建的Bean实例的类可以实例化<br>        Class&lt;?&gt; beanClass = resolveBeanClass(mbd, beanName);</p>
+<pre><code>if (beanClass != null &amp;&amp; !Modifier.isPublic(beanClass.getModifiers()) &amp;&amp; !mbd.isNonPublicAccessAllowed()) {
+    throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+            &quot;Bean class isn&apos;t public, and non-public access not allowed: &quot; + beanClass.getName());
+}
+ //这里使用工厂方法对Bean进行实例化
+if (mbd.getFactoryMethodName() != null)  {
+    return instantiateUsingFactoryMethod(beanName, mbd, args);
+}
+
+// Shortcut when re-creating the same bean...
+//使用容器自动装配方法进行实例化
+boolean resolved = false;
+boolean autowireNecessary = false;
+if (args == null) {
+    synchronized (mbd.constructorArgumentLock) {
+        if (mbd.resolvedConstructorOrFactoryMethod != null) {
+            resolved = true;
+            autowireNecessary = mbd.constructorArgumentsResolved;
+        }
+    }
+}
+if (resolved) {
+    if (autowireNecessary) {
+          //配置自动装配属性，使用容器自动实例化
+        return autowireConstructor(beanName, mbd, null, null);
+    }
+    else {
+           //无参构造方法实例化
+        return instantiateBean(beanName, mbd);
+    }
+}
+
+// Need to determine the constructor...
+ //使用构造函数进行实例化
+Constructor&lt;?&gt;\[\] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+if (ctors != null ||
+        mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_CONSTRUCTOR ||
+        mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args))  {
+</code></pre><p>//使用容器自动装配，调用构造方法实例化<br>return autowireConstructor(beanName, mbd, ctors, args);<br>        }</p>
+<pre><code>    // No special handling: simply use no-arg constructor.
+      //使用默认构造函数对Bean进行实例化
+    return instantiateBean(beanName, mbd);
+}
+</code></pre><p>/**<br> * CGLIB是一个常用的字节码生成器的类库，他提供了一系列的API来提供生成和转换Java的字节码功能。<br> * 在Spring AOP中也使用CGLIB对Java的字节码进行了增强。<br> */<br>private InstantiationStrategy instantiationStrategy = new CglibSubclassingInstantiationStrategy();</p>
+<p>protected InstantiationStrategy getInstantiationStrategy() {<br>        return this.instantiationStrategy;<br>}</p>
+<p>/**<br> * 最常见的实例化过程instantiateBean<br> * 使用默认的实例化策略对Bean进行实例化，默认的实例化策略是<br> * CglibSubclassingInstantiationStrategy，也就是用CGLIB来对Bean进行实例化<br> */<br>protected BeanWrapper instantiateBean(final String beanName, final RootBeanDefinition mbd) {<br>        try {<br>            Object beanInstance;<br>            final BeanFactory parent = this;<br>             //获取系统的安全管理接口<br>            if (System.getSecurityManager() != null) {<br>                beanInstance = AccessController.doPrivileged(new PrivilegedAction<object>() {<br>                    @Override<br>                    public Object run() {<br>                        return getInstantiationStrategy().instantiate(mbd, beanName, parent);<br>                    }<br>                }, getAccessControlContext());<br>            }<br>            else {<br>                 //实例化的对象封装<br>                beanInstance = getInstantiationStrategy().instantiate(mbd, beanName, parent);<br>            }<br>            BeanWrapper bw = new BeanWrapperImpl(beanInstance);<br>            initBeanWrapper(bw);<br>            return bw;<br>        }<br>        catch (Throwable ex) {<br>            throw new BeanCreationException(mbd.getResourceDescription(), beanName, “Instantiation of bean failed”, ex);<br>        }<br>    }</object></p>
+<p>我们对CglibSubclassingInstantiationStrategy进行跟踪，发现Spring中的CGLIB生成，是由SimpleInstantiationStrategy.instantiate方法来完成的，所以我们就直接看SimpleInstantiationStrategy.instantiate</p>
+<p>@Override<br>    public Object instantiate(RootBeanDefinition bd, String beanName, BeanFactory owner) {<br>        // Don’t override the class with CGLIB if no overrides.<br>        if (bd.getMethodOverrides().isEmpty()) {<br>              /指定构造器或者生成的对象工厂方法来对Bean进行实例化<br>            Constructor&lt;?&gt; constructorToUse;<br>            synchronized (bd.constructorArgumentLock) {<br>                constructorToUse = (Constructor&lt;?&gt;) bd.resolvedConstructorOrFactoryMethod;<br>                if (constructorToUse == null) {<br>                    final Class&lt;?&gt; clazz = bd.getBeanClass();<br>                    if (clazz.isInterface()) {<br>                        throw new BeanInstantiationException(clazz, “Specified class is an interface”);<br>                    }<br>                    try {<br>                        if (System.getSecurityManager() != null) {<br>                            constructorToUse = AccessController.doPrivileged(new PrivilegedExceptionAction&lt;Constructor&lt;?&gt;&gt;() {<br>                                @Override<br>                                public Constructor&lt;?&gt; run() throws Exception {<br>                                    return clazz.getDeclaredConstructor((Class[]) null);<br>                                }<br>                            });<br>                        }<br>                        else {<br>                            constructorToUse =    clazz.getDeclaredConstructor((Class[]) null);<br>                        }<br>                        bd.resolvedConstructorOrFactoryMethod = constructorToUse;<br>                    }<br>                    catch (Exception ex) {<br>                        throw new BeanInstantiationException(clazz, “No default constructor found”, ex);<br>                    }<br>                }<br>            }<br>              //通过BeanUtils进行实例化，这个BeanUtils的实例化通过Constructor来完成<br>            return BeanUtils.instantiateClass(constructorToUse);<br>        }<br>        else {<br>            // Must generate CGLIB subclass.<br>               //使用CGLIB来实例化对象<br>            return instantiateWithMethodInjection(bd, beanName, owner);<br>        }<br>    }</p>
+<p>从上面可以看到<strong>SimpleInstantiationStrategy</strong>是sprng用来生成Bean对象的默认类，它提供了两种方式一种是BeanUtils，它是使用了jvm的反射机制，另外一种就是cglib。</p>
+<h3 id="属性依赖注入实现：-populateBean"><a href="#属性依赖注入实现：-populateBean" class="headerlink" title="属性依赖注入实现：**populateBean**"></a><strong>属性依赖注入实现：**</strong>populateBean**</h3><p>Bean对象进行实例化以后。怎么把这些Bean对象之间的依赖关系处理好，以完成整个依赖注入，而这里就涉及到各种Bean对象依赖关系的处理过程了，而这些依赖关系都已经解析到了BeanDefinition。如果要仔细理解这个过程，我们必须从前面提到的populateBean方法入手。</p>
+<p>protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper bw) {<br>        //这里取得BeanDefinition中的property值<br>        PropertyValues pvs = mbd.getPropertyValues();<br>        //实例对象为NULL<br>        if (bw == null) {<br>            if (!pvs.isEmpty()) {<br>                throw new BeanCreationException(<br>                        mbd.getResourceDescription(), beanName, “Cannot apply property values to null instance”);<br>            }<br>            else {<br>                // Skip property population phase for null instance.<br>                //实例对象为NULL，属性值也为空，不需设置，直接返回<br>                return;<br>            }<br>        }</p>
+<pre><code>    //在设置属性之前调用Bean的PostProcessor后置处理器  
+    boolean continueWithPropertyPopulation = true;
+
+    if (!mbd.isSynthetic() &amp;&amp; hasInstantiationAwareBeanPostProcessors()) {
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof InstantiationAwareBeanPostProcessor) {
+                InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+                if (!ibp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
+                    continueWithPropertyPopulation = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!continueWithPropertyPopulation) {
+        return;
+    }
+    //开始进行依赖注入过程，先处理autowire的注入
+    if (mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE\_BY\_NAME ||
+            mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE\_BY\_TYPE) {
+
+
+        MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
+
+        //根据Bean的名字或者类型自动装配处理
+        if (mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE\_BY\_NAME) {
+            autowireByName(beanName, mbd, bw, newPvs);
+        }
+
+         //根据类型自动装配注入
+        if (mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE\_BY\_TYPE) {
+            autowireByType(beanName, mbd, bw, newPvs);
+        }
+
+        pvs = newPvs;
+    }
+    //检查日期是否持有用于单态模式Bean关闭时的后置处理器
+    boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
+    //Bean实例对象没有依赖，也没有继承
+    boolean needsDepCheck = (mbd.getDependencyCheck() != RootBeanDefinition.DEPENDENCY\_CHECK\_NONE);
+
+    if (hasInstAwareBpps || needsDepCheck) {
+         //从实例对象中提取属性描述符
+        PropertyDescriptor\[\] filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
+        if (hasInstAwareBpps) {
+            for (BeanPostProcessor bp : getBeanPostProcessors()) {
+                if (bp instanceof InstantiationAwareBeanPostProcessor) {
+                    //使用BeanPostProcessor处理器处理属性值  
+                    InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+                    pvs = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
+                    if (pvs == null) {
+                        return;
+                    }
+                }
+            }
+        }
+        if (needsDepCheck) {
+            //对要配置的属性进行依赖检查
+            checkDependencies(beanName, mbd, filteredPds, pvs);
+        }
+    }
+     //对属性进行依赖注入
+    applyPropertyValues(beanName, mbd, bw, pvs);
+}
+
+protected void applyPropertyValues(String beanName, BeanDefinition mbd, BeanWrapper bw, PropertyValues pvs) {
+    if (pvs == null || pvs.isEmpty()) {
+        return;
+    }
+    //封装属性值
+    MutablePropertyValues mpvs = null;
+    List&lt;PropertyValue&gt; original;
+
+    if (System.getSecurityManager() != null) {
+        if (bw instanceof BeanWrapperImpl) {
+            //设置安全上下文，JDK安全机制  
+            ((BeanWrapperImpl) bw).setSecurityContext(getAccessControlContext());
+        }
+    }
+
+    if (pvs instanceof MutablePropertyValues) {
+        mpvs = (MutablePropertyValues) pvs;
+        //属性值已经转换  
+        if (mpvs.isConverted()) {
+            // Shortcut: use the pre-converted values as-is.
+            try {
+                //为实例化对象设置属性值  
+                bw.setPropertyValues(mpvs);
+                return;
+            }
+            catch (BeansException ex) {
+                throw new BeanCreationException(
+                        mbd.getResourceDescription(), beanName, &quot;Error setting property values&quot;, ex);
+            }
+        }
+         //获取属性值对象的原始类型值  
+        original = mpvs.getPropertyValueList();
+    }
+    else {
+        original = Arrays.asList(pvs.getPropertyValues());
+    }
+
+     //获取用户自定义的类型转换  
+    TypeConverter converter = getCustomTypeConverter();
+    if (converter == null) {
+        converter = bw;
+    }
+
+    //创建一个Bean定义属性值解析器，将Bean定义中的属性值解析为Bean实例对象  的实际值 
+    BeanDefinitionValueResolver valueResolver = new BeanDefinitionValueResolver(this, beanName, mbd, converter);
+
+
+    //这里为解析值创建的一个副本，然后通过副本注入Bean
+    List&lt;PropertyValue&gt; deepCopy = new ArrayList&lt;PropertyValue&gt;(original.size());
+    boolean resolveNecessary = false;
+    //转换属性值
+    for (PropertyValue pv : original) {
+        if (pv.isConverted()) {
+            deepCopy.add(pv);
+        }
+        else {
+            String propertyName = pv.getName();
+             //原始的属性值，即转换之前的属性值  
+            Object originalValue = pv.getValue();
+               //转换属性值，例如将引用转换为IoC容器中实例化对象引用（属性值解析）                Object resolvedValue = valueResolver.resolveValueIfNecessary(pv, originalValue);
+            Object convertedValue = resolvedValue;
+            boolean convertible = bw.isWritableProperty(propertyName) &amp;&amp;
+                    !PropertyAccessorUtils.isNestedOrIndexedProperty(propertyName);
+            if (convertible) {
+                 //使用用户自定义的类型转换器转换属性值  
+                convertedValue = convertForProperty(resolvedValue, propertyName, bw, converter);
+            }
+            // Possibly store converted value in merged bean definition,
+            // in order to avoid re-conversion for every created bean instance.
+
+            //存储转换后的属性值，避免每次属性注入时的转换工作  
+            if (resolvedValue == originalValue) {
+                if (convertible) {
+                    pv.setConvertedValue(convertedValue);
+                }
+                deepCopy.add(pv);
+            }
+
+            //属性是可转换的，且属性原始值是字符串类型，且属性的原始类型值不是  
+            //动态生成的字符串，且属性的原始值不是集合或者数组类型  
+            else if (convertible &amp;&amp; originalValue instanceof TypedStringValue &amp;&amp;
+                    !((TypedStringValue) originalValue).isDynamic() &amp;&amp;
+                    !(convertedValue instanceof Collection || ObjectUtils.isArray(convertedValue))) {
+                pv.setConvertedValue(convertedValue);
+                deepCopy.add(pv);
+            }
+            else {
+                resolveNecessary = true;
+                deepCopy.add(new PropertyValue(pv, convertedValue));
+            }
+        }
+    }
+    if (mpvs != null &amp;&amp; !resolveNecessary) {
+        mpvs.setConverted();
+    }
+
+    // 这里是依赖注入发生的地方
+    try {
+        bw.setPropertyValues(new MutablePropertyValues(deepCopy));
+    }
+    catch (BeansException ex) {
+        throw new BeanCreationException(
+                mbd.getResourceDescription(), beanName, &quot;Error setting property values&quot;, ex);
+    }
+}
+</code></pre><p>以上就是属性依赖注入的过程，我们再看一下属性值的解析，点开valueResolver.resolveValueIfNecessary()方法。</p>
+<h3 id="属性值的解析：-resolveValueIfNecessary"><a href="#属性值的解析：-resolveValueIfNecessary" class="headerlink" title="属性值的解析：**resolveValueIfNecessary**"></a><strong>属性值的解析：**</strong>resolveValueIfNecessary**</h3><p>进而看一下BeanDefinitionValueResolver的resolveValueIfNecessary</p>
+<p>public Object resolveValueIfNecessary(Object argName, Object value) {<br>        // We must check each value to see whether it requires a runtime reference<br>        // to another bean to be resolved.<br>         //对引用类型的属性进行解析<br>        if (value instanceof RuntimeBeanReference) {<br>            RuntimeBeanReference ref = (RuntimeBeanReference) value;<br>              //调用引用类型属性的解析方法<br>            return resolveReference(argName, ref);<br>        }<br>//对属性值是引用容器中另一个Bean名称的解析<br>else if (value instanceof RuntimeBeanNameReference) {<br>            String refName = ((RuntimeBeanNameReference) value).getBeanName();<br>            refName = String.valueOf(doEvaluate(refName));<br>              //从容器中获取指定名称的Bean<br>            if (!this.beanFactory.containsBean(refName)) {<br>                throw new BeanDefinitionStoreException(<br>                        “Invalid bean name ‘“ + refName + “‘ in bean reference for “ + argName);<br>            }<br>            return refName;<br>        }<br>          //对Bean类型属性的解析，主要是Bean中的内部类<br>        else if (value instanceof BeanDefinitionHolder) {<br>            // Resolve BeanDefinitionHolder: contains BeanDefinition with name and aliases.<br>            BeanDefinitionHolder bdHolder = (BeanDefinitionHolder) value;<br>            return resolveInnerBean(argName, bdHolder.getBeanName(), bdHolder.getBeanDefinition());<br>        }<br>                else if (value instanceof BeanDefinition) {<br>            // Resolve plain BeanDefinition, without contained name: use dummy name.<br>            BeanDefinition bd = (BeanDefinition) value;<br>            String innerBeanName = “(inner bean)” + BeanFactoryUtils.GENERATED_BEAN_NAME_SEPARATOR +<br>                    ObjectUtils.getIdentityHexString(bd);<br>            return resolveInnerBean(argName, innerBeanName, bd);<br>        }<br>            //对集合数组类型的属性解析 </p>
+<pre><code>else if (value instanceof ManagedArray) {
+    // May need to resolve contained runtime references.
+    ManagedArray array = (ManagedArray) value;
+     //获取数组的类型  
+    Class&lt;?&gt; elementType = array.resolvedElementType;
+    if (elementType == null) {
+           //获取数组元素的类型  
+        String elementTypeName = array.getElementTypeName();
+        if (StringUtils.hasText(elementTypeName)) {
+            try {
+                    //使用反射机制创建指定类型的对象 
+                elementType = ClassUtils.forName(elementTypeName, this.beanFactory.getBeanClassLoader());
+                array.resolvedElementType = elementType;
+            }
+            catch (Throwable ex) {
+                // Improve the message by showing the context.
+                throw new BeanCreationException(
+                        this.beanDefinition.getResourceDescription(), this.beanName,
+                        &quot;Error resolving array type for &quot; + argName, ex);
+            }
+        }
+        else {
+             //没有获取到数组的类型，也没有获取到数组元素的类型，则直接设置数 组的类型为Object
+            elementType = Object.class;
+        }
+    }
+</code></pre><p>//创建指定类型的数组<br>            return resolveManagedArray(argName, (List&lt;?&gt;) value, elementType);<br>        }</p>
+<pre><code>    else if (value instanceof ManagedList) {
+        // May need to resolve contained runtime references.
+        return resolveManagedList(argName, (List&lt;?&gt;) value);
+    }
+    else if (value instanceof ManagedSet) {
+        // May need to resolve contained runtime references.
+        return resolveManagedSet(argName, (Set&lt;?&gt;) value);
+    }
+    else if (value instanceof ManagedMap) {
+        // May need to resolve contained runtime references.
+        return resolveManagedMap(argName, (Map&lt;?, ?&gt;) value);
+    }
+
+       //解析props类型的属性值，props其实就是key和value均为字符串的map  
+    else if (value instanceof ManagedProperties) {
+        Properties original = (Properties) value;
+          //创建一个拷贝，用于作为解析后的返回值
+        Properties copy = new Properties();
+        for (Map.Entry&lt;Object, Object&gt; propEntry : original.entrySet()) {
+            Object propKey = propEntry.getKey();
+            Object propValue = propEntry.getValue();
+            if (propKey instanceof TypedStringValue) {
+                propKey = evaluate((TypedStringValue) propKey);
+            }
+            if (propValue instanceof TypedStringValue) {
+                propValue = evaluate((TypedStringValue) propValue);
+            }
+            copy.put(propKey, propValue);
+        }
+        return copy;
+    }
+        //解析字符串类型的属性值  
+    else if (value instanceof TypedStringValue) {
+        // Convert value to target type here.
+        TypedStringValue typedStringValue = (TypedStringValue) value;
+        Object valueObject = evaluate(typedStringValue);
+        try {
+                //获取属性的目标类型  
+            Class&lt;?&gt; resolvedTargetType = resolveTargetType(typedStringValue);
+            if (resolvedTargetType != null) {
+                return this.typeConverter.convertIfNecessary(valueObject, resolvedTargetType);
+            }
+            else {
+                    //没有获取到属性的目标对象，则按Object类型返回 
+                return valueObject;
+            }
+        }
+        catch (Throwable ex) {
+            // Improve the message by showing the context.
+            throw new BeanCreationException(
+                    this.beanDefinition.getResourceDescription(), this.beanName,
+                    &quot;Error converting typed String value for &quot; + argName, ex);
+        }
+    }
+    else {
+        return evaluate(value);
+    }
+}
+</code></pre><h3 id="属性值的依赖注入setPropertyValue"><a href="#属性值的依赖注入setPropertyValue" class="headerlink" title="属性值的依赖注入setPropertyValue"></a><strong>属性值的依赖注入setPropertyValue</strong></h3><p>点开AbstractAutowireCapableBeanFactory类的applyPropertyValues方法最后setPropertyValues  实现类AbstractPropertyAccessor</p>
+<p>@Override<br>    public void setPropertyValue(PropertyValue pv) throws BeansException {<br>        setPropertyValue(pv.getName(), pv.getValue());<br>    }<br>@Override<br>    public void setPropertyValues(PropertyValues pvs, boolean ignoreUnknown, boolean ignoreInvalid)<br>            throws BeansException {</p>
+<pre><code>    List&lt;PropertyAccessException&gt; propertyAccessExceptions = null;
+    List&lt;PropertyValue&gt; propertyValues = (pvs instanceof MutablePropertyValues ?
+            ((MutablePropertyValues) pvs).getPropertyValueList() : Arrays.asList(pvs.getPropertyValues()));
+    for (PropertyValue pv : propertyValues) {
+        try {
+            // This method may throw any BeansException, which won&apos;t be caught
+            // here, if there is a critical failure such as no matching field.
+            // We can attempt to deal only with less serious exceptions.
+            setPropertyValue(pv);
+        }
+        catch (NotWritablePropertyException ex) {
+            if (!ignoreUnknown) {
+                throw ex;
+            }
+            // Otherwise, just ignore it and continue...
+        }
+        catch (NullValueInNestedPathException ex) {
+            if (!ignoreInvalid) {
+                throw ex;
+            }
+            // Otherwise, just ignore it and continue...
+        }
+        catch (PropertyAccessException ex) {
+            if (propertyAccessExceptions == null) {
+                propertyAccessExceptions = new LinkedList&lt;PropertyAccessException&gt;();
+            }
+            propertyAccessExceptions.add(ex);
+        }
+    }
+
+    // If we encountered individual exceptions, throw the composite exception.
+    if (propertyAccessExceptions != null) {
+        PropertyAccessException\[\] paeArray =
+                propertyAccessExceptions.toArray(new PropertyAccessException\[propertyAccessExceptions.size()\]);
+        throw new PropertyBatchUpdateException(paeArray);
+    }
+}
+</code></pre><p>好了，自此，依赖注入部分就完了。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/avatar.jpg" alt="XiuYu.Ge 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    XiuYu.Ge
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="65.html" title="Spring源码分析-IOC（五）依赖注入">65.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spring源码分析-IOC（五）依赖注入/" rel="tag"># Spring源码分析-IOC（五）依赖注入</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/21/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-9b-9b-ef-bc-89beandefinition-e8-a7-a3-e6-9e-90-e5-92-8c-e6-b3-a8-e5-86-8c/" rel="next" title="Spring源码分析-IOC（四）BeanDefinition解析和注册">
+                <i class="fa fa-chevron-left"></i> Spring源码分析-IOC（四）BeanDefinition解析和注册
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/23/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e5-85-ad-ef-bc-89ioc-e5-ae-b9-e5-99-a8-e5-b0-8f-e7-bb-93/" rel="prev" title="Spring源码分析-IOC（六）IOC容器小结">
+                Spring源码分析-IOC（六）IOC容器小结 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.jpg"
+                alt="XiuYu.Ge" />
+            
+              <p class="site-author-name" itemprop="name">XiuYu.Ge</p>
+              <p class="site-description motion-element" itemprop="description">I guess it comes down to a simple choice:get busy living or get busy dying。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/GeXyu" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/your-user-name" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-globe"></i>微博</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-block">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://school1024.com/" title="程序员笔记" target="_blank">程序员笔记</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#依赖注入"><span class="nav-number">1.</span> <span class="nav-text">依赖注入</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#bean-实例的创建和初始化：-createBean"><span class="nav-number">1.1.</span> <span class="nav-text">bean**实例的创建和初始化：**createBean</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成Bean中的对象：createBeanInstance"><span class="nav-number">1.2.</span> <span class="nav-text">生成Bean中的对象：createBeanInstance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#属性依赖注入实现：-populateBean"><span class="nav-number">1.3.</span> <span class="nav-text">属性依赖注入实现：**populateBean**</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#属性值的解析：-resolveValueIfNecessary"><span class="nav-number">1.4.</span> <span class="nav-text">属性值的解析：**resolveValueIfNecessary**</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#属性值的依赖注入setPropertyValue"><span class="nav-number">1.5.</span> <span class="nav-text">属性值的依赖注入setPropertyValue</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"><a target="_blank" href="http://www.miitbeian.gov.cn">鲁ICP备16041054号</a></span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+  <div class="footer-custom"><a target="_blank" href="http://www.miitbeian.gov.cn">鲁ICP备16041054号</a></div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://zzocde.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.zzcode.cn/2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/';
+          this.page.identifier = '2017/04/22/spring-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-ioc-ef-bc-88-e4-ba-94-ef-bc-89-e4-be-9d-e8-b5-96-e6-b3-a8-e5-85-a5/';
+          this.page.title = 'Spring源码分析-IOC（五）依赖注入';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://zzocde.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("Pol8fC5akEPdC4InFy3LjqE3-gzGzoHsz", "CAdhUTWYKX4Q5tpKAD7nDjqJ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
